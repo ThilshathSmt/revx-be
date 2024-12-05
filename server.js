@@ -1,8 +1,10 @@
-const express = require("express");
-const connectDB = require("./config/db");
-const dotenv = require("dotenv");
+const express = require('express');
+const connectDB = require('./config/db');
+const dotenv = require('dotenv');
+const authRoutes = require('./routes/authRoutes');
 
-dotenv.config(); // Load environment variables
+// Load environment variables
+dotenv.config();
 
 // Initialize express
 const app = express();
@@ -11,15 +13,12 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(express.json()); // To parse incoming JSON requests
+app.use(express.json()); // Parse incoming JSON requests
 
-// Sample route
-app.get("/", (req, res) => {
-  res.send("Hello, world!");
-});
+// Routes
+app.use('/api/auth', authRoutes); // Register routes
 
-const PORT = process.env.PORT || 5001;  // Change to another port (e.g., 5001)
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
