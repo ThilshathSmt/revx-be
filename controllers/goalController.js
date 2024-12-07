@@ -65,6 +65,7 @@ exports.updateGoal = async (req, res) => {
   }
 };
 
+
 // Delete a goal by ID
 exports.deleteGoal = async (req, res) => {
   const { id } = req.params;

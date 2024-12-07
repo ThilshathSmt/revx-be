@@ -42,6 +42,7 @@ const goalSchema = new mongoose.Schema({
   },
 });
 
+
 // Middleware to set updatedAt before saving
 goalSchema.pre('save', function (next) {
   this.updatedAt = Date.now();

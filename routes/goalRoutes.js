@@ -5,7 +5,7 @@ console.log(authenticateUser); // This should not be undefined
  // Authentication middleware
 const goalController = require('../controllers/goalController');
 
-router.post('/', authenticateUser, goalController.createGoal);
+router.post('/create', authenticateUser, goalController.createGoal);
 router.get('/', authenticateUser, goalController.getGoals);
 router.get('/:id', authenticateUser, goalController.getGoalById);
 router.put('/:id', authenticateUser, goalController.updateGoal);
