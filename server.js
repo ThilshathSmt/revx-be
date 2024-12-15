@@ -1,15 +1,15 @@
 const express = require('express');
-const connectDB = require('./config/db');
 const dotenv = require('dotenv');
-const mongoose = require('mongoose'); // Import mongoose
+const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
-const goalRoutes = require('./routes/goalRoutes');
+const hrRoutes = require('./routes/hrRoutes');
 
 // Load environment variables
 dotenv.config();
 
-// Initialize express
+// Initialize express app
 const app = express();
 
 // Connect to MongoDB
@@ -17,21 +17,19 @@ connectDB();
 
 // Middleware
 app.use(express.json()); // Parse incoming JSON requests
+app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded data
 
 // Routes
-app.use('/api/auth', authRoutes); // Register routes
-app.use('/api/goals', goalRoutes);
+app.use('/api/auth', authRoutes); // Register authentication routes
+app.use('/api/account', hrRoutes); // Register HR routes
 
 // Connect to MongoDB and start the server
-mongoose.connect('mongodb://localhost:27017/revx_be_1', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('MongoDB connected...');
-    app.listen(5002, () => {
-      console.log('Server running on port 5002');
+    const port = process.env.PORT || 5002;
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
     });
   })
-  .catch((err) => console.log(err));
-// const PORT = process.env.PORT || 5001;
-// app.listen(PORT, () => {
-//   console.log(`Server running on port ${PORT}`);
-// });
+  .catch((err) => console.log('MongoDB connection error:', err));
