@@ -14,7 +14,7 @@ const authenticate = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
+      return res.status(401).json({ message: 'No token provided or malformed token' });
     }
 
     // Verify the token
@@ -32,7 +32,7 @@ const authenticate = async (req, res, next) => {
     next(); // Proceed to the next middleware or route handler
   } catch (error) {
     console.error('Authentication error:', error.message);
-    
+
     // Specific error handling for token verification issues
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Invalid or expired token' });

@@ -14,15 +14,15 @@ router.post('/create', hrController.createUser);
 router.get('/all', hrController.getAllUsers);
 
 // Fetch user details by ID
-router.get('/:id', hrController.getUserById);
+router.get('/fetch/:id', hrController.getUserById);
 
 // Update a user by ID (Only HR)
-router.put('/:id', hrController.updateUser);
+router.put('/update/:id', hrController.updateUser);
 
 // Patch (partial update) a user by ID (Only HR)
-router.patch('/:id', hrController.patchUser);
+router.patch('/patch/:id', hrController.patchUser);
 
 // Delete a user by ID (Only HR)
-router.delete('/:id', hrController.deleteUser);
+router.delete('/delete/:id', hrController.deleteUser);
 
 module.exports = router;

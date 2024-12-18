@@ -51,7 +51,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// Login function
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
@@ -59,22 +58,44 @@ exports.login = async (req, res) => {
     // Find user by username
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid username' });
+      return res.status(400).json({ message: 'Invalid username or password' });
     }
 
-    // Verify password (plain text comparison for now)
+    // Simple password comparison (no hashing)
     if (user.password !== password) {
-      return res.status(400).json({ message: 'Invalid  password' });
+      return res.status(400).json({ message: 'Invalid username or password' });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: '10d', // Token valid for 10 days
-    });
+    // Generate JWT token with user data (including role)
+    const token = jwt.sign(
+      { id: user._id, username: user.username, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '10d' } // Token valid for 10 days
+    );
 
+    // Prepare a custom success message based on the role
+    let roleDetails = {};
+    let roleMessage = '';
+
+    if (user.role === 'hr') {
+      roleDetails = user.hrDetails;
+      roleMessage = 'HR login successful';
+    } else if (user.role === 'manager') {
+      roleDetails = user.managerDetails;
+      roleMessage = 'Manager login successful';
+    } else if (user.role === 'employee') {
+      roleDetails = user.employeeDetails;
+      roleMessage = 'Employee login successful';
+    }
+
+    // Return success response with token, user details, and role-specific data
     res.status(200).json({
-      message: 'Login successful',
+      message: roleMessage,
       token,
+      id: user._id,
+      username: user.username,
+      role: user.role,
+      roleDetails,
     });
   } catch (error) {
     console.error('Error during login:', error.message);
