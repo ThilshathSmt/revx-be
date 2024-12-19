@@ -1,6 +1,61 @@
 const User = require('../models/User');
 
 // Create a new user (Employee, Manager, or HR)
+// exports.createUser = async (req, res) => {
+//   const { username, email, password, role, employeeDetails, managerDetails, hrDetails } = req.body;
+
+//   try {
+//     // Only HR can create users
+//     const loggedInUser = req.user;
+//     if (loggedInUser.role !== 'hr') {
+//       return res.status(403).json({ message: 'Only HR can create new users' });
+//     }
+
+//     // Validate role
+//     if (!['employee', 'manager', 'hr'].includes(role)) {
+//       return res.status(400).json({ message: 'Invalid role specified' });
+//     }
+
+//     // Role-specific validations
+//     if (role === 'employee' && !employeeDetails) {
+//       return res.status(400).json({ message: 'Employee details are required for the employee role' });
+//     }
+//     if (role === 'manager' && !managerDetails) {
+//       return res.status(400).json({ message: 'Manager details are required for the manager role' });
+//     }
+//     if (role === 'hr' && !hrDetails) {
+//       return res.status(400).json({ message: 'HR details are required for the HR role' });
+//     }
+
+//     // Check if the user already exists
+//     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+//     if (existingUser) {
+//       return res.status(400).json({ message: 'Username or email already exists' });
+//     }
+
+//     // Create and save the new user
+//     const newUser = new User({
+//       username,
+//       email,
+//       password, // Plain text for now; replace with hashed passwords in production
+//       role,
+//       employeeDetails: role === 'employee' ? employeeDetails : undefined,
+//       managerDetails: role === 'manager' ? managerDetails : undefined,
+//       hrDetails: role === 'hr' ? hrDetails : undefined,
+//     });
+
+//     await newUser.save();
+
+//     res.status(201).json({
+//       message: `${role.charAt(0).toUpperCase() + role.slice(1)} created successfully`,
+//       userId: newUser._id,
+//     });
+//   } catch (error) {
+//     console.error('Error creating user:', error.message);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
+
 exports.createUser = async (req, res) => {
   const { username, email, password, role, employeeDetails, managerDetails, hrDetails } = req.body;
 
@@ -33,17 +88,40 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ message: 'Username or email already exists' });
     }
 
-    // Create and save the new user
-    const newUser = new User({
+    // Initialize user data
+    const userData = {
       username,
       email,
-      password, // Plain text for now; replace with hashed passwords in production
+      password, // Store password in plain text (not recommended)
       role,
-      employeeDetails: role === 'employee' ? employeeDetails : undefined,
-      managerDetails: role === 'manager' ? managerDetails : undefined,
-      hrDetails: role === 'hr' ? hrDetails : undefined,
-    });
+    };
 
+    // Handle role-specific details
+    if (role === 'employee') {
+      userData.employeeDetails = employeeDetails;
+    } else if (role === 'manager') {
+      if (!managerDetails.team || !Array.isArray(managerDetails.team)) {
+        return res.status(400).json({ message: 'Manager team must be a list of employee usernames' });
+      }
+
+      // Find employees by their usernames
+      const employees = await User.find({ username: { $in: managerDetails.team }, role: 'employee' });
+
+      if (employees.length !== managerDetails.team.length) {
+        return res.status(400).json({ message: 'One or more employees not found for the manager team' });
+      }
+
+      // Assign employee ObjectIDs to managerDetails.team
+      userData.managerDetails = {
+        department: managerDetails.department,
+        team: employees.map(emp => emp._id),
+      };
+    } else if (role === 'hr') {
+      userData.hrDetails = hrDetails;
+    }
+
+    // Create and save the new user
+    const newUser = new User(userData);
     await newUser.save();
 
     res.status(201).json({
@@ -52,7 +130,7 @@ exports.createUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating user:', error.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
 
