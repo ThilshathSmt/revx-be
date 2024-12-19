@@ -15,8 +15,8 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Enable CORS for all routes (you can modify it if needed)
-app.use(cors());
+// Use CORS middleware
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
 // Middleware
 app.use(express.json()); // Parse incoming JSON requests
