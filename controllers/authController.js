@@ -103,24 +103,49 @@ exports.login = async (req, res) => {
   }
 };
 
+
 // Reset Password
 exports.resetPassword = async (req, res) => {
-  const { username, newPassword } = req.body;
+  const { username, email, newPassword } = req.body;
 
   try {
-    // Find the user by username
-    const user = await User.findOne({ username });
+    // Validate required fields
+    if (!username || !email || !newPassword) {
+      return res.status(400).json({ message: 'Username, email, and new password are required' });
+    }
+
+    // Find the user by username and email
+    const user = await User.findOne({ username, email });
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(400).json({ message: 'User with the provided username and email not found' });
     }
 
     // Update the user's password
-    user.password = newPassword;
+    user.password = newPassword; // Make sure to hash this password before saving
     await user.save();
 
     res.status(200).json({ message: 'Password reset successful' });
   } catch (error) {
     console.error('Error resetting password:', error.message);
     res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+
+exports.logout = async (req, res) => {
+  try {
+    // Clear the JWT token from cookies by setting its Max-Age to 0
+    res.setHeader('Set-Cookie', 'authToken=; Max-Age=0; path=/; HttpOnly; SameSite=Strict');
+    
+    // Optionally, if you're using a session store (like Redis, MongoDB, etc.),
+    // you can clear the session on the server as well. Example:
+    // req.session = null;
+
+    // Respond with a success message
+    return res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error("Error during logout:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
