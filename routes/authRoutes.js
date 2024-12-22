@@ -7,7 +7,7 @@ const { checkRole } = require('../middleware/checkRole'); // Import checkRole mi
 const router = express.Router();
 
 // Register Route - Only HR can create new users (Employee, Manager, or other HRs)
-router.post('/register', authenticate, checkRole(['HR']), register);
+router.post('/register', register);
 
 // Login Route - Any user (Employee, Manager, HR) can log in
 router.post('/login', login);

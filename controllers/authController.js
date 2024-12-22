@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
 
-// Register function
+// 🔐 **Register User with Password Hashing**
 exports.register = async (req, res) => {
   const { username, email, password, role, employeeDetails, managerDetails, hrDetails } = req.body;
 
@@ -28,11 +29,14 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'HR details are required for the HR role' });
     }
 
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10); // Salt rounds = 10
+
     // Create and save the new user
     const newUser = new User({
       username,
       email,
-      password, // Plain text for now; hashing should be added in production
+      password: hashedPassword,
       role,
       employeeDetails: role === 'employee' ? employeeDetails : undefined,
       managerDetails: role === 'manager' ? managerDetails : undefined,
@@ -51,6 +55,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// 🔑 **Login User with Password Verification**
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
@@ -61,19 +66,20 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid username or password' });
     }
 
-    // Simple password comparison (no hashing)
-    if (user.password !== password) {
+    // Compare hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return res.status(400).json({ message: 'Invalid username or password' });
     }
 
-    // Generate JWT token with user data (including role)
+    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '10d' } // Token valid for 10 days
+      { expiresIn: '10d' }
     );
 
-    // Prepare a custom success message based on the role
+    // Prepare role-specific details
     let roleDetails = {};
     let roleMessage = '';
 
@@ -88,7 +94,6 @@ exports.login = async (req, res) => {
       roleMessage = 'Employee login successful';
     }
 
-    // Return success response with token, user details, and role-specific data
     res.status(200).json({
       message: roleMessage,
       token,
@@ -103,8 +108,7 @@ exports.login = async (req, res) => {
   }
 };
 
-
-// Reset Password
+// 🔄 **Reset Password with Hashing**
 exports.resetPassword = async (req, res) => {
   const { username, email, newPassword } = req.body;
 
@@ -120,8 +124,11 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'User with the provided username and email not found' });
     }
 
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
     // Update the user's password
-    user.password = newPassword; // Make sure to hash this password before saving
+    user.password = hashedPassword;
     await user.save();
 
     res.status(200).json({ message: 'Password reset successful' });
@@ -131,21 +138,13 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
-
+// 🚪 **Logout**
 exports.logout = async (req, res) => {
   try {
-    // Clear the JWT token from cookies by setting its Max-Age to 0
     res.setHeader('Set-Cookie', 'authToken=; Max-Age=0; path=/; HttpOnly; SameSite=Strict');
-    
-    // Optionally, if you're using a session store (like Redis, MongoDB, etc.),
-    // you can clear the session on the server as well. Example:
-    // req.session = null;
-
-    // Respond with a success message
     return res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
-    console.error("Error during logout:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error during logout:', error.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
