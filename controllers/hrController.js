@@ -130,7 +130,13 @@ exports.updateUser = async (req, res) => {
     // Update user fields
     if (username) user.username = username;
     if (email) user.email = email;
-    if (password) user.password = password; // Plain text for now; replace with hashed passwords
+
+    if (password) {
+      // Hash the new password if provided in plain text
+      const salt = await bcrypt.genSalt(10);  // Generate a salt
+      user.password = await bcrypt.hash(password, salt);  // Hash the password and save it
+    }
+
     if (role) user.role = role;
     if (employeeDetails) user.employeeDetails = employeeDetails;
     if (managerDetails) user.managerDetails = managerDetails;
@@ -144,6 +150,7 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 // Patch (partial update) user by ID
 exports.patchUser = async (req, res) => {
