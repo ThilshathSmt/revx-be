@@ -1,5 +1,5 @@
 const User = require('../models/User');
-
+const bcrypt = require('bcryptjs');
 // Create a new user (Employee, Manager, or HR)
 exports.createUser = async (req, res) => {
   const { username, email, password, role, employeeDetails, managerDetails, hrDetails } = req.body;
@@ -33,11 +33,14 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ message: 'Username or email already exists' });
     }
 
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10); // Hash with salt rounds
+
     // Initialize user data
     const userData = {
       username,
       email,
-      password, // Store password in plain text (not recommended)
+      password: hashedPassword, // Store the hashed password
       role,
     };
 
