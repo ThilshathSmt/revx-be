@@ -30,6 +30,10 @@ app.use('/api/departments', departmentRoutes); // Routes for Department Manageme
 const goalRoutes = require('./routes/goalRoutes');
 app.use('/api/goals',goalRoutes);
 
+//for task
+const taskRoutes = require('./routes/taskRoutes');
+app.use('/api/tasks', taskRoutes);  // Routes for Task Management
+
 // Routes
 app.use('/api/auth', authRoutes); // Register authentication routes
 app.use('/api/user', hrRoutes); // Register HR routes
