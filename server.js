@@ -22,6 +22,10 @@ app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json()); // Parse incoming JSON requests
 app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded data
 
+//for department
+const departmentRoutes = require('./routes/departmentRoutes');
+app.use('/api/departments', departmentRoutes); // Routes for Department Management
+
 // Routes
 app.use('/api/auth', authRoutes); // Register authentication routes
 app.use('/api/user', hrRoutes); // Register HR routes
