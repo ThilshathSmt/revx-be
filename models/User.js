@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
     enum: ['employee', 'manager', 'hr'], // Define valid roles
   },
   employeeDetails: {
-    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+    department: { type: String },
     designation: { type: String },
     joiningDate: { type: Date },
     // Add more fields as required for employees
@@ -32,7 +32,7 @@ const UserSchema = new mongoose.Schema({
     // Add more fields as required for managers
   },
   hrDetails: {
-    assignedDepartments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Department' }],
+    assignedDepartments: [{ type: String }],
     // Add more fields as required for HR
   },
 }, {
