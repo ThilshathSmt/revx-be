@@ -34,6 +34,10 @@ app.use('/api/goals',goalRoutes);
 const taskRoutes = require('./routes/taskRoutes');
 app.use('/api/tasks', taskRoutes);  // Routes for Task Management
 
+// for review cycles (goal reviews)
+const goalReviewRoutes = require('./routes/goalReviewRoutes');
+app.use('/api/goalReviews', goalReviewRoutes);
+
 // Routes
 app.use('/api/auth', authRoutes); // Register authentication routes
 app.use('/api/user', hrRoutes); // Register HR routes
