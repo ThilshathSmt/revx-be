@@ -34,6 +34,11 @@ app.use('/api/goals',goalRoutes);
 const selfAssessmentRoutes = require('./routes/selfAssessmentRoutes');
 app.use('/api/self-assessments', selfAssessmentRoutes);
 
+//for feedback
+const feedbackRoutes = require('./routes/feedbackRoutes');
+app.use('/api/feedback', feedbackRoutes);
+
+
 //for task
 const taskRoutes = require('./routes/taskRoutes');
 app.use('/api/tasks', taskRoutes);  // Routes for Task Management
