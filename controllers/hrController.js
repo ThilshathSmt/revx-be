@@ -85,7 +85,7 @@ exports.createUser = async (req, res) => {
 // Fetch all users (HR functionality)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().populate("managerDetails.department");
     res.status(200).json(users);
   } catch (error) {
     console.error('Error fetching users:', error.message);
