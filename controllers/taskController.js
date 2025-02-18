@@ -52,7 +52,7 @@ exports.getAllTasks = async (req, res) => {
 // Get all tasks assigned to an employee
 exports.getTasksForEmployee = async (req, res) => {
   try {
-    const tasks = await Task.find({ employeeId: req.user.id });
+    const tasks = await Task.find({ employeeId: req.user.id }).populate('projectId');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching tasks', error });
