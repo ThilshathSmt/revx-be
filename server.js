@@ -26,6 +26,10 @@ app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded data
 const departmentRoutes = require('./routes/departmentRoutes');
 app.use('/api/departments', departmentRoutes); // Routes for Department Management
 
+//for team
+const teamRoutes = require('./routes/teamRoutes');
+app.use('/api/teams', teamRoutes); // Routes for Team Management
+
 //for goals
 const goalRoutes = require('./routes/goalRoutes');
 app.use('/api/goals',goalRoutes);
