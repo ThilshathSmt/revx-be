@@ -20,6 +20,10 @@ const UserSchema = new mongoose.Schema({
     required: true,
     enum: ['employee', 'manager', 'hr'], // Define valid roles
   },
+  profilePicture: {
+    data: Buffer,  // To store the image as binary data
+    contentType: String  // To store the file's MIME type
+},
   employeeDetails: {
     // department: { type: String },
     designation: { type: String },
