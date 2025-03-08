@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-
+const path = require('path');
+const fs = require('fs');
+const upload = require('../config/storageConfig');
 // Update user details by ID (allowing users to update their own details)
 exports.updateUser = async (req, res) => {
   const { id } = req.params;

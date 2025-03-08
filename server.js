@@ -6,6 +6,8 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const hrRoutes = require('./routes/hrRoutes');
 const userRoutes = require('./routes/userRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+const path = require('path');
 
 const cors = require('cors');
 // Load environment variables
@@ -53,10 +55,14 @@ app.use('/api/tasks', taskRoutes);  // Routes for Task Management
 const goalReviewRoutes = require('./routes/goalReviewRoutes');
 app.use('/api/goalReviews', goalReviewRoutes);
 
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use('/api/auth', authRoutes); // Register authentication routes
 app.use('/api/user', hrRoutes); // Register HR routes
 app.use('/api/update', userRoutes); // Register HR routes
+app.use('/api/profile', profileRoutes);
+
 
 // Connect to MongoDB and start the server
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
