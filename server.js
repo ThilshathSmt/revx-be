@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const hrRoutes = require('./routes/hrRoutes');
+const userRoutes = require('./routes/userRoutes');
+
 const cors = require('cors');
 // Load environment variables
 dotenv.config();
@@ -54,6 +56,7 @@ app.use('/api/goalReviews', goalReviewRoutes);
 // Routes
 app.use('/api/auth', authRoutes); // Register authentication routes
 app.use('/api/user', hrRoutes); // Register HR routes
+app.use('/api/update', userRoutes); // Register HR routes
 
 // Connect to MongoDB and start the server
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
