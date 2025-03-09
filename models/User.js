@@ -31,7 +31,7 @@ const UserSchema = new mongoose.Schema({
     // Add more fields as required for employees
   },
   managerDetails: {
-    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department',required:false },
     team: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Reference to employees
     // Add more fields as required for managers
   },
