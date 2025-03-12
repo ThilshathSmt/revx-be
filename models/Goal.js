@@ -19,24 +19,24 @@ const goalSchema = new mongoose.Schema({
     enum: ['scheduled', 'in-progress', 'completed'],
     default: 'scheduled',
   },
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    required: true
+  },
   managerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Reference to the User (Manager)
+    ref: 'User',
+    required: true
+  },
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId, 
     required: true,
+    ref: 'Department',
   },
   description: {
     type: String,
     trim: true,
-  },
-  departmentId: {
-    type: mongoose.Schema.Types.ObjectId, 
-    required: true, // This should refer to a department model if it exists
-    ref: 'Department',
-  },
-  hrId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Reference to the HR user who created the goal
-    required: true,
   },
   createdAt: {
     type: Date,
@@ -48,12 +48,10 @@ const goalSchema = new mongoose.Schema({
   },
 });
 
-// Middleware to set updatedAt before saving
 goalSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
 const Goal = mongoose.model('Goal', goalSchema);
-
 module.exports = Goal;
