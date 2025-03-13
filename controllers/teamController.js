@@ -1,5 +1,7 @@
 const Team = require('../models/Team');
 const User = require('../models/User');
+const mongoose = require('mongoose');
+
 
 // Create new Team with members
 exports.createTeam = async (req, res) => {
@@ -81,18 +83,29 @@ exports.updateTeam = async (req, res) => {
 // Get specific team by ID with populated members
 exports.getTeamById = async (req, res) => {
     try {
-        const team = await Team.findById(req.params.id)
-            .populate('createdBy', 'username')
-            .populate('members', 'username email role');
-
-        if (!team) {
-            return res.status(404).json({ message: 'Team not found' });
-        }
-        res.status(200).json(team);
+      // Validate team ID format
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ message: 'Invalid team ID format' });
+      }
+  
+      const team = await Team.findById(req.params.id)
+        .populate('members', 'username email role')
+        .populate('createdBy', 'username');
+  
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found' });
+      }
+      
+      res.status(200).json(team);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching Team', error });
+      console.error("Team fetch error:", error);
+      res.status(500).json({ 
+        message: 'Error fetching team details',
+        error: error.message 
+      });
     }
-};
+  };
+  
 
 
 
