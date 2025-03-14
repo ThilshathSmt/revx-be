@@ -1,5 +1,7 @@
 const User = require('../models/User');
+const Team = require('../models/Team'); // Import Team model if needed
 const bcrypt = require('bcryptjs');
+
 // Create a new user (Employee, Manager, or HR)
 exports.createUser = async (req, res) => {
   const { username, email, password, role, employeeDetails, managerDetails, hrDetails } = req.body;
@@ -48,21 +50,15 @@ exports.createUser = async (req, res) => {
     if (role === 'employee') {
       userData.employeeDetails = employeeDetails;
     } else if (role === 'manager') {
-      if (!managerDetails.team || !Array.isArray(managerDetails.team)) {
-        return res.status(400).json({ message: 'Manager team must be a list of employee usernames' });
+      // Validate manager details
+      if (!managerDetails.department || !managerDetails.team) {
+        return res.status(400).json({ message: 'Department and team are required for the manager role' });
       }
 
-      // Find employees by their usernames
-      const employees = await User.find({ username: { $in: managerDetails.team }, role: 'employee' });
-
-      if (employees.length !== managerDetails.team.length) {
-        return res.status(400).json({ message: 'One or more employees not found for the manager team' });
-      }
-
-      // Assign employee ObjectIDs to managerDetails.team
+      // Assign manager details directly (no employee validation)
       userData.managerDetails = {
         department: managerDetails.department,
-        team: employees.map(emp => emp._id),
+        team: managerDetails.team, // Directly assign team IDs or names
       };
     } else if (role === 'hr') {
       userData.hrDetails = hrDetails;
@@ -150,7 +146,6 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 
 // Patch (partial update) user by ID
 exports.patchUser = async (req, res) => {
