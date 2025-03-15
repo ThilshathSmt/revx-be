@@ -1,17 +1,33 @@
 const mongoose = require('mongoose');
 
 const goalReviewSchema = new mongoose.Schema({
+  hrAdminId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // HR Admin who assigns the review Cycle to Manager 
+    required: true,
+  },
+  projectTitle: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  managerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // The manager assigned to review the goal to hr Admin
+    required: true,
+  },
+  teamId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Team',
+      required: true  //Team hasbeen assigned to specific goal and teams are under a manger
+    },
   goalId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Goal', // Each goal has one review cycle
     required: true,
     unique: true, // Ensures one review per goal
   },
-  managerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // The manager assigned to review the goal
-    required: true,
-  },
+ 
   dueDate: {
     type: Date,
     required: true, // The deadline for review
@@ -25,11 +41,7 @@ const goalReviewSchema = new mongoose.Schema({
     type: String,
     trim: true, //Review  from the manager
   },
-  hrAdminId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // HR Admin who assigns the review
-    required: true,
-  },
+  
   createdAt: {
     type: Date,
     default: Date.now,
