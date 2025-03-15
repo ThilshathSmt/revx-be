@@ -29,11 +29,6 @@ const goalSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  departmentId: {
-    type: mongoose.Schema.Types.ObjectId, 
-    required: true,
-    ref: 'Department',
-  },
   description: {
     type: String,
     trim: true,

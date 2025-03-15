@@ -1,11 +1,10 @@
 const Goal = require('../models/Goal');
 const User = require('../models/User');
 const Team = require('../models/Team');
-const Department = require('../models/Department');
 
 // Manager creates goal for their team
 exports.createGoal = async (req, res) => {
-  const { projectTitle, startDate, dueDate, description, teamId, departmentId } = req.body;
+  const { projectTitle, startDate, dueDate, description, teamId } = req.body;
 
   try {
     // Validate manager exists
@@ -22,11 +21,7 @@ exports.createGoal = async (req, res) => {
       return res.status(404).json({ message: 'Team not found under your management' });
     }
 
-    // Validate department exists
-    const department = await Department.findById(departmentId);
-    if (!department) {
-      return res.status(404).json({ message: 'Department not found' });
-    }
+    
 
     const newGoal = new Goal({
       projectTitle,
@@ -35,7 +30,6 @@ exports.createGoal = async (req, res) => {
       status: 'scheduled',
       description,
       teamId,
-      departmentId,
       managerId: req.user.id
     });
 
@@ -46,7 +40,6 @@ exports.createGoal = async (req, res) => {
       goal: await Goal.findById(newGoal._id)
         .populate('teamId', 'teamName')
         .populate('managerId', 'username')
-        .populate('departmentId', 'departmentName')
     });
   } catch (error) {
     res.status(500).json({ message: 'Error creating goal', error });
@@ -59,7 +52,6 @@ exports.getAllGoals = async (req, res) => {
     const goals = await Goal.find({ managerId: req.user.id })
       .populate('teamId', 'teamName')
       .populate('managerId', 'username')
-      .populate('departmentId', 'departmentName');
 
     res.status(200).json(goals);
   } catch (error) {
@@ -72,8 +64,7 @@ exports.getGoalById = async (req, res) => {
   try {
     const goal = await Goal.findById(req.params.projectId)
       .populate('teamId', 'teamName')
-      .populate('managerId', 'username')
-      .populate('departmentId', 'departmentName');
+      .populate('managerId', 'username');
 
     if (!goal) {
       return res.status(404).json({ message: 'Goal not found' });
@@ -91,8 +82,7 @@ exports.getTeamGoals = async (req, res) => {
   try {
     const goals = await Goal.find({ teamId: req.params.teamId })
       .populate('teamId', 'teamName')
-      .populate('managerId', 'username')
-      .populate('departmentId', 'departmentName');
+      .populate('managerId', 'username');
       
     res.status(200).json(goals);
   } catch (error) {
@@ -112,15 +102,6 @@ exports.updateGoal = async (req, res) => {
       return res.status(404).json({ message: 'Goal not found or unauthorized' });
     }
 
-    // Validate department if being updated
-    if (req.body.departmentId) {
-      const department = await Department.findById(req.body.departmentId);
-      if (!department) {
-        return res.status(404).json({ message: 'Department not found' });
-      }
-      goal.departmentId = req.body.departmentId;
-    }
-
     // Update other fields
     if (req.body.projectTitle) goal.projectTitle = req.body.projectTitle;
     if (req.body.startDate) goal.startDate = req.body.startDate;
@@ -134,7 +115,6 @@ exports.updateGoal = async (req, res) => {
       message: 'Goal updated successfully',
       goal: await Goal.findById(goal._id)
         .populate('teamId', 'teamName')
-        .populate('departmentId', 'departmentName')
         .populate('managerId', 'username')
     });
   } catch (error) {

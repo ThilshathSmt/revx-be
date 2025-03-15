@@ -1,11 +1,11 @@
 const Team = require('../models/Team');
 const User = require('../models/User');
+const Department = require('../models/Department');
 const mongoose = require('mongoose');
-
 
 // Create new Team with members
 exports.createTeam = async (req, res) => {
-    const { teamName, members = [] } = req.body; // Default to empty array
+    const { teamName, members = [], departmentId } = req.body; // Default to empty array
 
     try {
         // Validate members only if provided
@@ -16,40 +16,57 @@ exports.createTeam = async (req, res) => {
             }
         }
 
+        // Validate department if provided
+        if (departmentId) {
+            if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+                return res.status(400).json({ message: 'Invalid department ID' });
+            }
+
+            // Check if department exists
+            const existingDepartment = await Department.findById(departmentId);
+            if (!existingDepartment) {
+                return res.status(400).json({ message: 'Department not found' });
+            }
+        }
+
         const newTeam = new Team({
             teamName,
             members,
             createdBy: req.user.id,
+            departmentId,
         });
 
         await newTeam.save();
         
-        // Return the team with members field
+        // Return the team with members and department fields
         res.status(201).json({ 
             message: 'Team created successfully', 
             team: await Team.findById(newTeam._id)
                 .populate('members', 'username')
+                .populate('departmentId', 'departmentName')
         });
     } catch (error) {
-        res.status(500).json({ message: 'Error creating team', error });
+        console.error("Error creating team:", error);
+        res.status(500).json({ message: 'Error creating team', error: error.message });
     }
 };
 
-// Get all Teams with populated members
+// Get all Teams with populated members and department
 exports.getTeams = async (req, res) => {
     try {
         const teams = await Team.find()
             .populate('createdBy', 'username')
-            .populate('members', 'username email role');
+            .populate('members', 'username email role')
+            .populate('departmentId', 'departmentName');  // Fixed department field name
         res.status(200).json(teams);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching teams', error });
     }
 };
 
-// Update team including members
+// Update team including members and department
 exports.updateTeam = async (req, res) => {
-    const { teamName, members } = req.body;
+    const { teamName, members, departmentId } = req.body;
 
     try {
         const team = await Team.findById(req.params.id);
@@ -66,6 +83,20 @@ exports.updateTeam = async (req, res) => {
             team.members = members;
         }
 
+        // Validate department if provided
+        if (departmentId) {
+            if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+                return res.status(400).json({ message: 'Invalid department ID' });
+            }
+
+            const existingDepartment = await Department.findById(departmentId);
+            if (!existingDepartment) {
+                return res.status(400).json({ message: 'Department not found' });
+            }
+
+            team.departmentId = department;
+        }
+
         if (teamName) team.teamName = teamName;
         team.updatedAt = Date.now();
 
@@ -74,13 +105,14 @@ exports.updateTeam = async (req, res) => {
             message: 'Team updated successfully', 
             team: await Team.findById(updatedTeam._id)
                 .populate('members', 'username')
+                .populate('department', 'departmentName')
         });
     } catch (error) {
         res.status(500).json({ message: 'Error updating team', error });
     }
 };
 
-// Get specific team by ID with populated members
+// Get specific team by ID with populated members and department
 exports.getTeamById = async (req, res) => {
     try {
       // Validate team ID format
@@ -90,7 +122,8 @@ exports.getTeamById = async (req, res) => {
   
       const team = await Team.findById(req.params.id)
         .populate('members', 'username email role')
-        .populate('createdBy', 'username');
+        .populate('createdBy', 'username')
+        .populate('departmentId', 'departmentName');  // Fixed department field name
   
       if (!team) {
         return res.status(404).json({ message: 'Team not found' });
@@ -104,10 +137,7 @@ exports.getTeamById = async (req, res) => {
         error: error.message 
       });
     }
-  };
-  
-
-
+};
 
 // Delete team remains the same
 exports.deleteTeam = async (req, res) => {

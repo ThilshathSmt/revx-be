@@ -15,6 +15,10 @@ const teamSchema = new mongoose.Schema({
     ref: 'User', // User (likely HR) who created the team
     required: true,
   },
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+  },
   createdAt: {
     type: Date,
     default: Date.now,
