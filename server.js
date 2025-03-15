@@ -51,7 +51,7 @@ app.use('/api/feedback', feedbackRoutes);
 const taskRoutes = require('./routes/taskRoutes');
 app.use('/api/tasks', taskRoutes);  // Routes for Task Management
 
-// for review cycles (goal reviews)
+// for review cycles (Goal reviews)
 const goalReviewRoutes = require('./routes/goalReviewRoutes');
 app.use('/api/goalReviews', goalReviewRoutes);
 

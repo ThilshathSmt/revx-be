@@ -1,132 +1,157 @@
-const Goal = require('../models/Goal');
 const GoalReview = require('../models/GoalReview');
+const Goal = require('../models/Goal');
 const User = require('../models/User');
+const Team = require('../models/Team');
 
-// Create a new review cycle for a goal
-exports.createReviewCycle = async (req, res) => {
-  const { goalId, dueDate, managerId } = req.body;
-
+// Create a goal review cycle (HR Admin assigns a review cycle to a manager)
+exports.createGoalReview = async (req, res) => {
   try {
-    // Check if the goal exists
+    const { hrAdminId, projectTitle, managerId, teamId, goalId, dueDate } = req.body;
+
+    // Validate HR Admin
+    const hrAdmin = await User.findById(hrAdminId);
+    if (!hrAdmin || hrAdmin.role !== 'hr') {
+      return res.status(403).json({ message: 'HR Admin access required' });
+    }
+
+    // Validate manager
+    const manager = await User.findById(managerId);
+    if (!manager || manager.role !== 'manager') {
+      return res.status(404).json({ message: 'Manager not found' });
+    }
+
+    // Validate team
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    // Validate goal
     const goal = await Goal.findById(goalId);
     if (!goal) {
-      return res.status(404).json({ message: 'Goal not found.' });
+      return res.status(404).json({ message: 'Goal not found' });
     }
 
-    // Ensure the manager exists
-    const manager = await User.findById(managerId);
-    if (!manager) {
-      return res.status(404).json({ message: 'Manager not found.' });
-    }
-
-    // Create a new review cycle entry for this goal
-    const newReviewCycle = new GoalReview({
-      goalId,
+    // Create Goal Review Cycle
+    const newGoalReview = new GoalReview({
+      hrAdminId,
+      projectTitle,
       managerId,
-      hrAdminId: req.user.id, // HR Admin creating the review cycle
+      teamId,
+      goalId,
       dueDate,
-      status: 'Pending', // Initial status set to Pending
-      managerReview :"",
+      status: 'Pending'
     });
 
-    await newReviewCycle.save();
-    res.status(201).json({ message: 'Review cycle created successfully', reviewCycle: newReviewCycle });
+    await newGoalReview.save();
+    res.status(201).json({ message: 'Goal Review Cycle created successfully', goalReview: newGoalReview });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating review cycle', error });
+    res.status(500).json({ message: 'Error creating goal review cycle', error });
   }
 };
 
-// Get all review cycles for the logged-in manager
-exports.getManagerReviews = async (req, res) => {
+// Update a goal review cycle (HR can modify details like deadline, title, team, or goal)
+exports.updateGoalReview = async (req, res) => {
   try {
-    const reviews = await GoalReview.find({ managerId: req.user.id })
-      .populate('goalId hrAdminId managerId')
-      .exec();
-    res.status(200).json(reviews);
+    const { id } = req.params;
+    const { projectTitle, dueDate, teamId, goalId } = req.body;
+
+    // Find goal review
+    const goalReview = await GoalReview.findById(id);
+    if (!goalReview) {
+      return res.status(404).json({ message: 'Goal Review Cycle not found' });
+    }
+
+    // Update fields
+    if (projectTitle) goalReview.projectTitle = projectTitle;
+    if (dueDate) goalReview.dueDate = dueDate;
+    if (teamId) goalReview.teamId = teamId;
+    if (goalId) goalReview.goalId = goalId;
+
+    await goalReview.save();
+    res.status(200).json({ message: 'Goal Review Cycle updated successfully', goalReview });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching review cycles', error });
+    res.status(500).json({ message: 'Error updating goal review cycle', error });
   }
 };
 
-// Manager provides a review for a specific review cycle
-exports.provideReview = async (req, res) => {
-  const { reviewCycleId, review } = req.body;
-
+// Delete a goal review cycle (HR can remove it if needed)
+exports.deleteGoalReview = async (req, res) => {
   try {
-    // Find the review cycle
-    const reviewCycle = await GoalReview.findById(reviewCycleId);
-    if (!reviewCycle) {
-      return res.status(404).json({ message: 'Review cycle not found.' });
+    const { id } = req.params;
+
+    // Find goal review
+    const goalReview = await GoalReview.findById(id);
+    if (!goalReview) {
+      return res.status(404).json({ message: 'Goal Review Cycle not found' });
     }
 
-    // Ensure that the logged-in user is the assigned manager for this review cycle
-    if (reviewCycle.managerId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'You are not authorized to provide a review for this cycle.' });
-    }
-
-    // Update the review cycle with the manager's review and mark it as Completed
-    reviewCycle.managerReview = review;
-    reviewCycle.status = 'Completed';
-
-    await reviewCycle.save();
-    res.status(200).json({ message: 'Review provided successfully', reviewCycle });
+    await GoalReview.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Goal Review Cycle deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error providing review', error });
+    res.status(500).json({ message: 'Error deleting goal review cycle', error });
   }
 };
 
-// Get a specific review cycle by ID
-exports.getReviewCycleById = async (req, res) => {
+// Fetch all goal review cycles assigned by HR
+exports.getAllGoalReviews = async (req, res) => {
   try {
-    const reviewCycle = await GoalReview.findById(req.params.id)
-      .populate('goalId managerId hrAdminId')
-      .exec();
+    const goalReviews = await GoalReview.find()
+      .populate('hrAdminId', 'username')
+      .populate('managerId', 'username')
+      .populate('teamId', 'teamName')
+      .populate('goalId', 'projectTitle');
 
-    if (!reviewCycle) {
-      return res.status(404).json({ message: 'Review cycle not found.' });
-    }
-
-    res.status(200).json(reviewCycle);
+    res.status(200).json(goalReviews);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching review cycle', error });
+    res.status(500).json({ message: 'Error fetching goal review cycles', error });
   }
 };
 
-// Update the review cycle (HR/Admin functionality)
-exports.updateReviewCycle = async (req, res) => {
+// Fetch a specific goal review cycle by ID
+exports.getGoalReviewById = async (req, res) => {
   try {
-    const updatedReviewCycle = await GoalReview.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    
-    if (!updatedReviewCycle) {
-      return res.status(404).json({ message: 'Review cycle not found.' });
+    const goalReview = await GoalReview.findById(req.params.id)
+      .populate('hrAdminId', 'username')
+      .populate('managerId', 'username')
+      .populate('teamId', 'teamName')
+      .populate('goalId', 'projectTitle');
+
+    if (!goalReview) {
+      return res.status(404).json({ message: 'Goal Review Cycle not found' });
     }
 
-    res.status(200).json({ message: 'Review cycle updated successfully', reviewCycle: updatedReviewCycle });
+    res.status(200).json(goalReview);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating review cycle', error });
+    res.status(500).json({ message: 'Error fetching goal review cycle', error });
   }
 };
 
-// Delete a review cycle (HR Admin only)
-exports.deleteReviewCycle = async (req, res) => {
+// Manager submits a review for a goal
+exports.submitManagerReview = async (req, res) => {
   try {
-    const reviewCycle = await GoalReview.findById(req.params.id);
-    if (!reviewCycle) {
-      return res.status(404).json({ message: 'Review cycle not found' });
+    const { id } = req.params;
+    const { managerId, managerReview } = req.body;
+
+    // Find goal review
+    const goalReview = await GoalReview.findById(id);
+    if (!goalReview) {
+      return res.status(404).json({ message: 'Goal Review Cycle not found' });
     }
 
-    // Ensure only the HR Admin who created the review cycle can delete it
-    if (reviewCycle.hrAdminId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Only HR admin can delete this review cycle' });
+    // Ensure the request is made by the assigned manager
+    if (goalReview.managerId.toString() !== managerId) {
+      return res.status(403).json({ message: 'Unauthorized: Only the assigned manager can submit a review' });
     }
 
-    await GoalReview.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: 'Review cycle deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting review cycle', error });
-  }
+     // Update manager review and status
+     goalReview.managerReview = managerReview;
+     goalReview.status = 'Completed';
+ 
+     await goalReview.save();
+ 
+     res.status(200).json({ message: 'Manager review submitted successfully', goalReview });
+   } catch (error) {
+     res.status(500).json({ message: 'Error submitting manager review', error });
+   }
 };
