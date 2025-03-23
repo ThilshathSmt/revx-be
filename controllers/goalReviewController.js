@@ -9,7 +9,7 @@ exports.createGoalReview = async (req, res) => {
     const { hrAdminId, projectTitle, managerId, teamId, goalId, dueDate } = req.body;
 
     // Validate HR Admin
-    const hrAdmin = await User.findById(hrAdminId);
+    const hrAdmin = await User.findById(req.user.id);
     if (!hrAdmin || hrAdmin.role !== 'hr') {
       return res.status(403).json({ message: 'HR Admin access required' });
     }
@@ -34,7 +34,7 @@ exports.createGoalReview = async (req, res) => {
 
     // Create Goal Review Cycle
     const newGoalReview = new GoalReview({
-      hrAdminId,
+      hrAdminId: req.user.id,
       projectTitle,
       managerId,
       teamId,
