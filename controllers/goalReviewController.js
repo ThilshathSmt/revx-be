@@ -6,7 +6,7 @@ const Team = require('../models/Team');
 // Create a goal review cycle (HR Admin assigns a review cycle to a manager)
 exports.createGoalReview = async (req, res) => {
   try {
-    const { hrAdminId, projectTitle, managerId, teamId, goalId, dueDate } = req.body;
+    const { hrAdminId, message, managerId, teamId, goalId, dueDate } = req.body;
 
     // Validate HR Admin
     const hrAdmin = await User.findById(req.user.id);
@@ -35,7 +35,7 @@ exports.createGoalReview = async (req, res) => {
     // Create Goal Review Cycle
     const newGoalReview = new GoalReview({
       hrAdminId: req.user.id,
-      projectTitle,
+      message,
       managerId,
       teamId,
       goalId,
@@ -54,7 +54,7 @@ exports.createGoalReview = async (req, res) => {
 exports.updateGoalReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { projectTitle, dueDate, teamId, goalId } = req.body;
+    const { message, dueDate, teamId, goalId } = req.body;
 
     // Find goal review
     const goalReview = await GoalReview.findById(id);
@@ -63,7 +63,7 @@ exports.updateGoalReview = async (req, res) => {
     }
 
     // Update fields
-    if (projectTitle) goalReview.projectTitle = projectTitle;
+    if (message) goalReview.message = message;
     if (dueDate) goalReview.dueDate = dueDate;
     if (teamId) goalReview.teamId = teamId;
     if (goalId) goalReview.goalId = goalId;
@@ -100,7 +100,7 @@ exports.getAllGoalReviews = async (req, res) => {
       .populate('hrAdminId', 'username')
       .populate('managerId', 'username')
       .populate('teamId', 'teamName')
-      .populate('goalId', 'projectTitle');
+      .populate('goalId', 'message');
 
     res.status(200).json(goalReviews);
   } catch (error) {
@@ -115,7 +115,7 @@ exports.getGoalReviewById = async (req, res) => {
       .populate('hrAdminId', 'username')
       .populate('managerId', 'username')
       .populate('teamId', 'teamName')
-      .populate('goalId', 'projectTitle');
+      .populate('goalId', 'message');
 
     if (!goalReview) {
       return res.status(404).json({ message: 'Goal Review Cycle not found' });

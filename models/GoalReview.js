@@ -6,7 +6,7 @@ const goalReviewSchema = new mongoose.Schema({
     ref: 'User', // HR Admin who assigns the review Cycle to Manager 
     required: true,
   },
-  projectTitle: {
+  message: {
     type: String,
     required: true,
     trim: true
