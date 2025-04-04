@@ -94,7 +94,7 @@ exports.updateTeam = async (req, res) => {
                 return res.status(400).json({ message: 'Department not found' });
             }
 
-            team.departmentId = department;
+            team.departmentId = departmentId;
         }
 
         if (teamName) team.teamName = teamName;
@@ -105,7 +105,7 @@ exports.updateTeam = async (req, res) => {
             message: 'Team updated successfully', 
             team: await Team.findById(updatedTeam._id)
                 .populate('members', 'username')
-                .populate('department', 'departmentName')
+                .populate('departmentId', 'departmentName')
         });
     } catch (error) {
         res.status(500).json({ message: 'Error updating team', error });
