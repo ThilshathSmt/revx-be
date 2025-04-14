@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Team = require('../models/Team'); // Import Team model if needed
 const bcrypt = require('bcryptjs');
+const Department = require('../models/Department');
+
 
 // Create a new user (Employee, Manager, or HR)
 exports.createUser = async (req, res) => {
@@ -48,6 +50,16 @@ exports.createUser = async (req, res) => {
 
     // Handle role-specific details
     if (role === 'employee') {
+      if (!employeeDetails || !employeeDetails.department) {
+        return res.status(400).json({ message: 'Department is required for employee' });
+      }
+
+      // Validate department exists
+      const departmentExists = await Department.findById(employeeDetails.department);
+      if (!departmentExists) {
+        return res.status(400).json({ message: 'Invalid department ID for employee' });
+      }
+
       userData.employeeDetails = employeeDetails;
     } else if (role === 'manager') {
       // Validate manager details

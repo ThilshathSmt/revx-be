@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema({
     contentType: String  // To store the file's MIME type
 },
   employeeDetails: {
-    // department: { type: String },
+    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department',required:false },
     designation: { type: String },
     joiningDate: { type: Date },
     // Add more fields as required for employees
