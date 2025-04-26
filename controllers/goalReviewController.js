@@ -100,7 +100,7 @@ exports.getAllGoalReviews = async (req, res) => {
       .populate('hrAdminId', 'username')
       .populate('managerId', 'username')
       .populate('teamId', 'teamName')
-      .populate('goalId', 'description');
+      .populate('goalId', 'projectTitle');
 
     res.status(200).json(goalReviews);
   } catch (error) {
