@@ -54,15 +54,23 @@ exports.createTeam = async (req, res) => {
 // Get all Teams with populated members and department
 exports.getTeams = async (req, res) => {
     try {
-        const teams = await Team.find()
-            .populate('createdBy', 'username')
-            .populate('members', 'username email role')
-            .populate('departmentId', 'departmentName');  // Fixed department field name
-        res.status(200).json(teams);
+      const { departmentId } = req.query;
+      
+      const filter = {};
+      if (departmentId) {
+        filter.departmentId = departmentId; // Add department filter if provided
+      }
+  
+      const teams = await Team.find(filter)
+        .populate('createdBy', 'username')
+        .populate('members', 'username email role')
+        .populate('departmentId', 'departmentName');
+  
+      res.status(200).json(teams);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching teams', error });
+      res.status(500).json({ message: 'Error fetching teams', error });
     }
-};
+  };
 
 // Update team including members and department
 exports.updateTeam = async (req, res) => {
