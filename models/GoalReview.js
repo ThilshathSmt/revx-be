@@ -50,6 +50,10 @@ const goalReviewSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  submissionDate: {  // 👈 Add this new field
+    type: Date,
+    default: null, // Null until review is completed
+  },
 });
 
 // Middleware to update `updatedAt` before saving

@@ -131,27 +131,28 @@ exports.getGoalReviewById = async (req, res) => {
 exports.submitManagerReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { managerId, managerReview } = req.body;
+    const { managerId, managerReview, submissionDate } = req.body;
 
-    // Find goal review
     const goalReview = await GoalReview.findById(id);
     if (!goalReview) {
       return res.status(404).json({ message: 'Goal Review Cycle not found' });
     }
 
-    // Ensure the request is made by the assigned manager
     if (goalReview.managerId.toString() !== managerId) {
-      return res.status(403).json({ message: 'Unauthorized: Only the assigned manager can submit a review' });
+      return res.status(403).json({ message: 'Unauthorized' });
     }
 
-     // Update manager review and status
-     goalReview.managerReview = managerReview;
-     goalReview.status = 'Completed';
- 
-     await goalReview.save();
- 
-     res.status(200).json({ message: 'Manager review submitted successfully', goalReview });
-   } catch (error) {
-     res.status(500).json({ message: 'Error submitting manager review', error });
-   }
+    goalReview.managerReview = managerReview;
+    goalReview.status = 'Completed';
+    goalReview.submissionDate = submissionDate || new Date(); // Store submission date
+    
+    await goalReview.save();
+
+    res.status(200).json({ 
+      message: 'Manager review submitted successfully', 
+      goalReview 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error submitting manager review', error });
+  }
 };
