@@ -47,10 +47,7 @@ exports.updateUser = async (req, res) => {
         ...managerDetails,      // Apply updates
         department: managerDetails.department 
           ? mongoose.Types.ObjectId(managerDetails.department) 
-          : user.managerDetails?.department,
-        team: managerDetails.team 
-          ? managerDetails.team.map(id => mongoose.Types.ObjectId(id))
-          : user.managerDetails?.team || []
+          : user.managerDetails?.department
       };
     }
     
