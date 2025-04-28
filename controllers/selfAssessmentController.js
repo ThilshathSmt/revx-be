@@ -99,6 +99,24 @@ const getAssessmentById = async (req, res) => {
     }
 };
 
+// Get All Self-Assessments for the Logged-in Employee
+const getEmployeeAssessments = async (req, res) => {
+    try {
+        if (req.user.role !== 'employee') {
+            return res.status(403).json({ message: 'Only employees can view their own assessments' });
+        }
+
+        const assessments = await SelfAssessment.find({ employeeId: req.user.id })
+            .populate('managerId', 'name email')
+            .sort({ createdAt: -1 });
+
+        res.json(assessments);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+
 // Delete Self-Assessment (Only Employee Can Delete Their Own)
 const deleteAssessment = async (req, res) => {
     try {
@@ -119,6 +137,7 @@ const deleteAssessment = async (req, res) => {
     }
 };
 
+
 // Exporting all functions at once using module.exports
 module.exports = {
     submitAssessment,
@@ -126,4 +145,6 @@ module.exports = {
     getManagerAssessments,
     getAssessmentById,
     deleteAssessment,
+    getEmployeeAssessments,
 };
+
