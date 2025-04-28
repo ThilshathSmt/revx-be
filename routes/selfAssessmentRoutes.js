@@ -19,4 +19,8 @@ router.get('/:id', authenticate, selfAssessmentController.getAssessmentById);
 // Employee deletes their own self-assessment
 router.delete('/delete/:id', authenticate, selfAssessmentController.deleteAssessment);
 
+// Employee views all their own self-assessments
+router.get('/employee/mine', authenticate, selfAssessmentController.getEmployeeAssessments);
+
+
 module.exports = router;
