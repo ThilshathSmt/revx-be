@@ -1,8 +1,12 @@
 const User = require('../models/User');
-const Team = require('../models/Team'); // Import Team model if needed
 const bcrypt = require('bcryptjs');
 const Department = require('../models/Department');
 
+// Helper function to validate email format
+const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
 
 // Create a new user (Employee, Manager, or HR)
 exports.createUser = async (req, res) => {
@@ -18,6 +22,11 @@ exports.createUser = async (req, res) => {
     // Validate role
     if (!['employee', 'manager', 'hr'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
+    }
+
+    // Email validation
+    if (!email || !validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
     }
 
     // Role-specific validations
@@ -59,19 +68,17 @@ exports.createUser = async (req, res) => {
       if (!departmentExists) {
         return res.status(400).json({ message: 'Invalid department ID for employee' });
       }
-
       userData.employeeDetails = employeeDetails;
     } else if (role === 'manager') {
       // Validate manager details
-      if (!managerDetails.department || !managerDetails.team) {
-        return res.status(400).json({ message: 'Department and team are required for the manager role' });
+      if (!managerDetails || !managerDetails.department) {
+        return res.status(400).json({ message: 'Department is required for the manager role' });
       }
-
-      // Assign manager details directly (no employee validation)
-      userData.managerDetails = {
-        department: managerDetails.department,
-        team: managerDetails.team, // Directly assign team IDs or names
-      };
+      const departmentExists = await Department.findById(managerDetails.department);
+      if (!departmentExists) {
+        return res.status(400).json({ message: 'Invalid department ID for manager' });
+      }
+      userData.managerDetails = managerDetails;
     } else if (role === 'hr') {
       userData.hrDetails = hrDetails;
     }
@@ -93,7 +100,7 @@ exports.createUser = async (req, res) => {
 // Fetch all users (HR functionality)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().populate("managerDetails.department");
+    const users = await User.find().populate('managerDetails.department');
     res.status(200).json(users);
   } catch (error) {
     console.error('Error fetching users:', error.message);
@@ -138,6 +145,11 @@ exports.updateUser = async (req, res) => {
     // Update user fields
     if (username) user.username = username;
     if (email) user.email = email;
+
+    // Email validation
+    if (email && !validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
 
     if (password) {
       // Hash the new password if provided in plain text
