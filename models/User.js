@@ -33,7 +33,7 @@ const UserSchema = new mongoose.Schema({
     department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department',required:false },
   },
   hrDetails: {
-    assignedDepartments: [{ type:String }],
+
    
   },
 }, {

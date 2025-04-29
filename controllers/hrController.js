@@ -36,9 +36,6 @@ exports.createUser = async (req, res) => {
     if (role === 'manager' && !managerDetails) {
       return res.status(400).json({ message: 'Manager details are required for the manager role' });
     }
-    if (role === 'hr' && !hrDetails) {
-      return res.status(400).json({ message: 'HR details are required for the HR role' });
-    }
 
     // Check if the user already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
