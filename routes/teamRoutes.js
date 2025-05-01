@@ -12,6 +12,9 @@ router.get('/', authenticate, teamController.getTeams);
 
 router.get('/:id', authenticate, teamController.getTeamById);
 
+// Get teams by manager ID
+router.get('/by-manager/:managerId', authenticate, teamController.getTeamsByManagerId);
+
 // Update a team
 router.put('/:id', authenticate, teamController.updateTeam);
 

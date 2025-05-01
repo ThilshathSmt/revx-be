@@ -147,6 +147,47 @@ exports.getTeamById = async (req, res) => {
     }
 };
 
+// Get teams based on manager ID
+exports.getTeamsByManagerId = async (req, res) => {
+    const { managerId } = req.params;
+
+    try {
+        // Validate manager ID
+        if (!mongoose.Types.ObjectId.isValid(managerId)) {
+            return res.status(400).json({ message: 'Invalid manager ID' });
+        }
+
+        // Find the manager
+        const manager = await User.findById(managerId);
+        if (!manager || manager.role !== 'manager') {
+            return res.status(404).json({ message: 'Manager not found or invalid role' });
+        }
+
+        const managerDept = manager.managerDetails?.department;
+
+        if (!managerDept) {
+            return res.status(400).json({ message: 'Manager has no department assigned' });
+        }
+
+        // Find teams under this department
+        const teams = await Team.find({ departmentId: managerDept })
+            .populate('members', 'username email role')
+            .populate('createdBy', 'username')
+            .populate('departmentId', 'departmentName');
+
+        res.status(200).json({
+            manager: manager.username,
+            department: managerDept,
+            teams
+        });
+
+    } catch (error) {
+        console.error("Error fetching teams by manager:", error);
+        res.status(500).json({ message: 'Error fetching teams by manager ID', error: error.message });
+    }
+};
+
+
 // Delete team remains the same
 exports.deleteTeam = async (req, res) => {
     try {
