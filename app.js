@@ -18,6 +18,7 @@ const selfAssessmentRoutes = require('./routes/selfAssessmentRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const goalReviewRoutes = require('./routes/goalReviewRoutes');
+const taskReviewRoutes = require('./routes/taskReviewRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -48,6 +49,7 @@ app.use('/api/self-assessments', selfAssessmentRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/goalReviews', goalReviewRoutes);
+app.use('/api/taskReviews', taskReviewRoutes);
 
 // Export app
 module.exports = app;
