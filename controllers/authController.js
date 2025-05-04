@@ -1,24 +1,23 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
+const { sendPasswordResetEmail } = require('../utils/mailer'); // Optional if you're using your own mailer
 
-// 🔐 **Register User with Password Hashing**
+// 🔐 Register a new user
 exports.register = async (req, res) => {
   const { username, email, password, role, employeeDetails, managerDetails, hrDetails } = req.body;
 
   try {
-    // Check if the user already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       return res.status(400).json({ message: 'Username or Email already exists' });
     }
 
-    // Validate role
     if (!['employee', 'manager', 'hr'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
     }
 
-    // Role-specific validations
     if (role === 'employee' && !employeeDetails) {
       return res.status(400).json({ message: 'Employee details are required for the employee role' });
     }
@@ -29,10 +28,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'HR details are required for the HR role' });
     }
 
-    // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10); // Salt rounds = 10
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create and save the new user
     const newUser = new User({
       username,
       email,
@@ -55,31 +52,27 @@ exports.register = async (req, res) => {
   }
 };
 
-// 🔑 **Login User with Password Verification**
+// 🔑 Login user
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Find user by username
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ message: 'Invalid username or password' });
     }
 
-    // Compare hashed password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({ message: 'Invalid username or password' });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '10d' }
     );
 
-    // Prepare role-specific details
     let roleDetails = {};
     let roleMessage = '';
 
@@ -108,41 +101,98 @@ exports.login = async (req, res) => {
   }
 };
 
-// 🔄 **Reset Password with Hashing**
-exports.resetPassword = async (req, res) => {
-  const { username, email, newPassword } = req.body;
+/// ✉️ Request password reset (updated with better error handling)
+exports.requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
 
   try {
-    // Validate required fields
-    if (!username || !email || !newPassword) {
-      return res.status(400).json({ message: 'Username, email, and new password are required' });
-    }
-
-    // Find the user by username and email
-    const user = await User.findOne({ username, email });
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'User with the provided username and email not found' });
+      // Don't reveal if user doesn't exist for security
+      return res.json({ message: 'If an account exists with this email, a reset link has been sent' });
     }
 
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
-    // Update the user's password
-    user.password = hashedPassword;
-    await user.save();
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
 
-    res.status(200).json({ message: 'Password reset successful' });
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Password Reset Request',
+      html: `
+        <p>You requested a password reset. Click the link below to set a new password:</p>
+        <a href="${resetLink}">Reset Password</a>
+        <p>This link is valid for 15 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `,
+    });
+
+    res.json({ 
+      success: true,
+      message: 'If an account exists with this email, a reset link has been sent'
+    });
   } catch (error) {
-    console.error('Error resetting password:', error.message);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error sending reset email:', error.message);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to process reset request' 
+    });
   }
 };
 
-// 🚪 **Logout**
-exports.logout = async (req, res) => {
+// ✅ Confirm password reset (updated with password validation)
+exports.confirmPasswordReset = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  // Basic password validation
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'Password must be at least 8 characters long' 
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ 
+      success: true,
+      message: 'Password has been reset successfully' 
+    });
+  } catch (error) {
+    console.error('Reset token error:', error.message);
+    res.status(400).json({ 
+      success: false,
+      message: 'Invalid or expired token' 
+    });
+  }
+};
+
+
+// 🚪 Logout user
+exports.logout = (req, res) => {
   try {
     res.setHeader('Set-Cookie', 'authToken=; Max-Age=0; path=/; HttpOnly; SameSite=Strict');
-    return res.status(200).json({ message: 'Logged out successfully' });
+    res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('Error during logout:', error.message);
     res.status(500).json({ message: 'Internal server error' });
