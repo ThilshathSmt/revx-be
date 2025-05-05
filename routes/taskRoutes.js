@@ -6,7 +6,9 @@ const {
   getAllTasks,
   getTaskById,
   updateTask,
-  deleteTask
+  deleteTask,
+  getTasksByProjectId, 
+  getEmployeeForTask
 } = require('../controllers/taskController');
 
 const router = express.Router();
@@ -20,8 +22,15 @@ router.get('/all', authenticate, getAllTasks);
 // Get tasks assigned to the logged-in employee
 router.get('/', authenticate, getTasksForEmployee);
 
+//Get all tasks for a specific project/goal by project ID
+router.get('/project/:projectId', authenticate, getTasksByProjectId);
+
 // Get a single task by ID
 router.get('/:id', authenticate, getTaskById);
+
+//Get employee assigned to a specific task
+router.get('/task/:taskId/employee', authenticate, getEmployeeForTask);
+
 
 // Update a task
 router.put('/:id', authenticate, updateTask);
