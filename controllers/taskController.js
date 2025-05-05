@@ -2,7 +2,7 @@ const Task = require('../models/Task');
 const Goal = require('../models/Goal');
 const User = require('../models/User');
 
-// Manager assigns a new task to an employee
+// Manager or HR assigns a new task to an employee
 exports.createTask = async (req, res) => {
   const { projectId, taskTitle, startDate, dueDate, description, employeeId, priority } = req.body;
 
@@ -27,7 +27,7 @@ exports.createTask = async (req, res) => {
       dueDate,
       status: 'scheduled',
       description,
-      managerId: req.user.id, // Manager is the user making the request
+      managerId: req.user.id, // Task creator
       priority,
       employeeId,
     });
@@ -39,10 +39,27 @@ exports.createTask = async (req, res) => {
   }
 };
 
-// Get all tasks (Admin/Manager)
+// Get all tasks (HR/Admin: all, Manager: own)
 exports.getAllTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ managerId: req.user.id }).populate('projectId').populate('employeeId').populate('managerId');
+    let tasks;
+
+    if (req.user.role === 'manager') {
+      // Manager can see only tasks they created
+      tasks = await Task.find({ managerId: req.user.id })
+        .populate('projectId')
+        .populate('employeeId')
+        .populate('managerId');
+    } else if (req.user.role === 'hr' || req.user.role === 'admin') {
+      // HR and Admin can see all tasks
+      tasks = await Task.find()
+        .populate('projectId')
+        .populate('employeeId')
+        .populate('managerId');
+    } else {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching tasks', error });
@@ -52,7 +69,8 @@ exports.getAllTasks = async (req, res) => {
 // Get all tasks assigned to an employee
 exports.getTasksForEmployee = async (req, res) => {
   try {
-    const tasks = await Task.find({ employeeId: req.user.id }).populate('projectId');
+    const tasks = await Task.find({ employeeId: req.user.id })
+      .populate('projectId');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching tasks', error });
@@ -62,7 +80,10 @@ exports.getTasksForEmployee = async (req, res) => {
 // Get a specific task by ID
 exports.getTaskById = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id).populate('projectId').populate('employeeId').populate('managerId');
+    const task = await Task.findById(req.params.id)
+      .populate('projectId')
+      .populate('employeeId')
+      .populate('managerId');
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
@@ -78,13 +99,12 @@ exports.getTaskById = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    Object.assign(task, req.body); // Update the task with new data
-    task.updatedAt = Date.now(); // Update timestamp
+    Object.assign(task, req.body);
+    task.updatedAt = Date.now();
 
     await task.save();
     res.status(200).json({ message: 'Task updated successfully', task });
@@ -107,3 +127,44 @@ exports.deleteTask = async (req, res) => {
     res.status(500).json({ message: 'Error deleting task', error });
   }
 };
+
+// Get all tasks for a specific goal (project)
+exports.getTasksByProjectId = async (req, res) => {
+  const { projectId } = req.params;
+
+  try {
+    const goal = await Goal.findById(projectId);
+    if (!goal) {
+      return res.status(404).json({ message: 'Goal (Project) not found' });
+    }
+
+    const tasks = await Task.find({ projectId })
+      .populate('employeeId')
+      .populate('managerId')
+      .populate('projectId');
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching tasks for the project', error });
+  }
+};
+
+// Get the employee assigned to a specific task ID
+exports.getEmployeeForTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.taskId).populate('employeeId');
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    if (!task.employeeId) {
+      return res.status(404).json({ message: 'No employee assigned to this task' });
+    }
+
+    res.status(200).json(task.employeeId);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching employee for task', error });
+  }
+};
+
