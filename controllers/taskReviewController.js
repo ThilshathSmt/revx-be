@@ -11,7 +11,7 @@ exports.createTaskReview = async (req, res) => {
     const {
       departmentId,
       teamId,
-      goalId,
+      projectId,
       taskId,
       description,
       dueDate,
@@ -28,7 +28,7 @@ exports.createTaskReview = async (req, res) => {
     const [department, team, goal, task, employee] = await Promise.all([
       Department.findById(departmentId),
       Team.findById(teamId),
-      Goal.findById(goalId),
+      Goal.findById(projectId),
       Task.findById(taskId),
       User.findById(employeeId)
     ]);
@@ -44,7 +44,7 @@ exports.createTaskReview = async (req, res) => {
       hrAdminId: req.user.id,
       departmentId,
       teamId,
-      goalId,
+      projectId,
       taskId,
       description,
       employeeId,
@@ -67,7 +67,7 @@ exports.updateTaskReview = async (req, res) => {
       description,
       dueDate,
       teamId,
-      goalId,
+      projectId,
       taskId,
       departmentId,
       employeeId
@@ -86,10 +86,10 @@ exports.updateTaskReview = async (req, res) => {
       taskReview.teamId = teamId;
     }
 
-    if (goalId) {
-      const goal = await Goal.findById(goalId);
+    if (projectId) {
+      const goal = await Goal.findById(projectId);
       if (!goal) return res.status(404).json({ message: 'Goal not found' });
-      taskReview.goalId = goalId;
+      taskReview.projectId = projectId;
     }
 
     if (departmentId) {
@@ -139,8 +139,8 @@ exports.getAllTaskReviews = async (req, res) => {
       .populate('hrAdminId', 'username')
       .populate('departmentId', 'departmentName')
       .populate('teamId', 'teamName')
-      .populate('goalId', 'projectTitle')
-      .populate('taskId', 'title')
+      .populate('projectId', 'projectTitle')
+      .populate('taskId', 'taskTitle')
       .populate('employeeId', 'username');
 
     res.status(200).json(taskReviews);
@@ -156,8 +156,8 @@ exports.getTaskReviewById = async (req, res) => {
       .populate('hrAdminId', 'username')
       .populate('departmentId', 'departmentName')
       .populate('teamId', 'teamName')
-      .populate('goalId', 'projectTitle')
-      .populate('taskId', 'title')
+      .populate('projectId', 'projectTitle')
+      .populate('taskId', 'taskTitle')
       .populate('employeeId', 'username');
 
     if (!taskReview) return res.status(404).json({ message: 'Task Review not found' });
@@ -202,7 +202,7 @@ exports.getAllEmployeeReviews = async (req, res) => {
 
     const reviews = await TaskReview.find({ employeeReview: { $exists: true, $ne: null } })
       .populate('employeeId', 'username')
-      .populate('taskId', 'title')
+      .populate('taskId', 'taskTitle')
       .select('taskId employeeId employeeReview submissionDate');
 
     res.status(200).json(reviews);
