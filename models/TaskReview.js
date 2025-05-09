@@ -16,7 +16,7 @@ const taskReviewSchema = new mongoose.Schema({
     ref: 'Team', // Team assigned to the task
     required: true,
   },
-  goalId: {
+  projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Goal', // Related goal for this task
     required: true,
