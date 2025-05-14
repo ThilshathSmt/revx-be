@@ -168,3 +168,25 @@ exports.getEmployeeForTask = async (req, res) => {
   }
 };
 
+
+exports.updateTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // If status is being updated to completed, set completion date
+    if (req.body.status === 'completed' && task.status !== 'completed') {
+      req.body.completedAt = new Date();
+    }
+
+    Object.assign(task, req.body);
+    task.updatedAt = Date.now();
+
+    await task.save();
+    res.status(200).json({ message: 'Task updated successfully', task });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating task', error });
+  }
+};
