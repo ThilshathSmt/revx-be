@@ -4,6 +4,11 @@ const User = require('../models/User');
 const Team = require('../models/Team');
 const Department = require('../models/Department');
 const Task = require('../models/Task');
+const {
+  notifyEmployeeOnTaskReviewCreated,
+  notifyHROnTaskReviewSubmitted
+} = require('../controllers/notificationController');
+
 
 // HR creates a Task Review Cycle
 exports.createTaskReview = async (req, res) => {
@@ -53,6 +58,7 @@ exports.createTaskReview = async (req, res) => {
     });
 
     await taskReview.save();
+    await notifyEmployeeOnTaskReviewCreated(taskReview);
     res.status(201).json({ message: 'Task Review created successfully', taskReview });
   } catch (error) {
     res.status(500).json({ message: 'Error creating task review', error });
@@ -186,6 +192,8 @@ exports.submitEmployeeReview = async (req, res) => {
     taskReview.submissionDate = new Date();
 
     await taskReview.save();
+    await notifyHROnTaskReviewSubmitted(taskReview);
+
     res.status(200).json({ message: 'Task review submitted successfully', taskReview });
   } catch (error) {
     res.status(500).json({ message: 'Error submitting task review', error });
