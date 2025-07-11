@@ -19,6 +19,7 @@ const feedbackRoutes = require('./routes/feedbackRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const goalReviewRoutes = require('./routes/goalReviewRoutes');
 const taskReviewRoutes = require('./routes/taskReviewRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -50,6 +51,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/goalReviews', goalReviewRoutes);
 app.use('/api/taskReviews', taskReviewRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Export app
 module.exports = app;
