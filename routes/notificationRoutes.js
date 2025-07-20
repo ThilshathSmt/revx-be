@@ -12,4 +12,7 @@ router.patch('/:id/read', authenticate, notificationController.markAsRead);
 // Mark all notifications as read
 router.patch('/mark-all-read', authenticate, notificationController.markAllAsRead);
 
+// Get unread notification count for a user
+router.get('/unread-count', authenticate, notificationController.getUnreadNotificationCount);
+
 module.exports = router;
