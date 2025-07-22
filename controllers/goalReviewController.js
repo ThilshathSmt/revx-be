@@ -121,7 +121,7 @@ exports.getGoalReviewById = async (req, res) => {
       .populate('hrAdminId', 'username')
       .populate('managerId', 'username')
       .populate('teamId', 'teamName')
-      .populate('goalId', 'description');
+      .populate('goalId', 'projectTitle description');
 
     if (!goalReview) {
       return res.status(404).json({ message: 'Goal Review Cycle not found' });
