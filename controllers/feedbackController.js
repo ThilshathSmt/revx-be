@@ -138,7 +138,7 @@ const feedbackController = {
             .populate({
                 path: 'selfAssessmentId',
                 populate: [
-                    { path: 'employeeId', select: 'name email' },
+                    { path: 'employeeId', select: 'username email' },
                     { path: 'taskId', select: 'taskTitle dueDate' }
                 ]
             })
