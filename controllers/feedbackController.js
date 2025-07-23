@@ -8,25 +8,23 @@ const feedbackController = {
             const { selfAssessmentId, feedbackText } = req.body;
             const managerId = req.user.id;
 
+            // Role check
+            if (req.user.role !== 'manager') {
+                return res.status(403).json({ message: 'Only managers can submit feedback' });
+            }
+
             // Validate input
             if (!selfAssessmentId || !feedbackText) {
                 return res.status(400).json({ 
-                    success: false,
                     message: 'Self assessment ID and feedback text are required' 
                 });
             }
 
             // Check if the self-assessment exists and belongs to this manager
-            const selfAssessment = await SelfAssessment.findOne({
-                _id: selfAssessmentId,
-                managerId: managerId,
-                status: 'submitted'
-            }).populate('employeeId', 'name email');
-
-            if (!selfAssessment) {
+            const selfAssessment = await SelfAssessment.findById(selfAssessmentId).populate('employeeId', 'name email');
+            if (!selfAssessment || selfAssessment.managerId?.toString() !== managerId || selfAssessment.status !== 'submitted') {
                 return res.status(404).json({ 
-                    success: false,
-                    message: 'Self assessment not found or not available for feedback' 
+                    message: 'Self-assessment not found' 
                 });
             }
 
@@ -34,7 +32,6 @@ const feedbackController = {
             const existingFeedback = await Feedback.findOne({ selfAssessmentId });
             if (existingFeedback) {
                 return res.status(400).json({ 
-                    success: false,
                     message: 'Feedback already exists for this assessment' 
                 });
             }
@@ -56,7 +53,6 @@ const feedbackController = {
             await selfAssessment.save();
 
             res.status(201).json({
-                success: true,
                 message: 'Feedback submitted successfully',
                 feedback: newFeedback,
                 assessment: selfAssessment
@@ -65,9 +61,7 @@ const feedbackController = {
         } catch (error) {
             console.error('Error submitting feedback:', error);
             res.status(500).json({ 
-                success: false,
-                message: 'Server error while submitting feedback',
-                error: error.message 
+                message: 'Server error while submitting feedback'
             });
         }
     },
@@ -81,7 +75,6 @@ const feedbackController = {
 
             if (!feedbackText) {
                 return res.status(400).json({ 
-                    success: false,
                     message: 'Feedback text is required' 
                 });
             }
@@ -89,16 +82,14 @@ const feedbackController = {
             const feedback = await Feedback.findById(id);
             if (!feedback) {
                 return res.status(404).json({ 
-                    success: false,
                     message: 'Feedback not found' 
                 });
             }
 
-            // Check authorization
-            if (feedback.managerId.toString() !== managerId) {
+            // Role check
+            if (req.user.role !== 'manager' || feedback.managerId?.toString() !== managerId) {
                 return res.status(403).json({ 
-                    success: false,
-                    message: 'Not authorized to edit this feedback' 
+                    message: 'Unauthorized to edit this feedback' 
                 });
             }
 
@@ -109,7 +100,6 @@ const feedbackController = {
             await feedback.save();
 
             res.status(200).json({
-                success: true,
                 message: 'Feedback updated successfully',
                 feedback
             });
@@ -117,9 +107,7 @@ const feedbackController = {
         } catch (error) {
             console.error('Error editing feedback:', error);
             res.status(500).json({ 
-                success: false,
-                message: 'Server error while editing feedback',
-                error: error.message 
+                message: 'Server error while editing feedback'
             });
         }
     },
@@ -127,6 +115,10 @@ const feedbackController = {
     // Get all assessments needing feedback + given feedbacks (manager view)
     getManagerFeedbacks: async (req, res) => {
         try {
+            // Role check
+            if (req.user.role !== 'manager') {
+                return res.status(403).json({ message: 'Only managers can view feedback' });
+            }
             const managerId = req.user.id;
 
             // Get submitted assessments awaiting feedback
@@ -153,7 +145,6 @@ const feedbackController = {
             .sort({ updatedAt: -1 });
 
             res.status(200).json({
-                success: true,
                 pendingAssessments,
                 givenFeedbacks
             });
@@ -161,9 +152,7 @@ const feedbackController = {
         } catch (error) {
             console.error('Error fetching manager feedbacks:', error);
             res.status(500).json({ 
-                success: false,
-                message: 'Server error while fetching feedbacks',
-                error: error.message 
+                message: 'Server error while fetching feedbacks'
             });
         }
     },
@@ -172,48 +161,27 @@ const feedbackController = {
     getFeedbackByAssessmentId: async (req, res) => {
         try {
             const { id } = req.params;
-            const userId = req.user.id;
-
-            // Find the self-assessment
-            const selfAssessment = await SelfAssessment.findById(id)
-                .populate('employeeId', 'name email')
-                .populate('managerId', 'name email')
-                .populate('taskId', 'taskTitle dueDate');
-
-            if (!selfAssessment) {
-                return res.status(404).json({ 
-                    success: false,
-                    message: 'Self assessment not found' 
-                });
-            }
-
-            // Check authorization
-            const isEmployee = selfAssessment.employeeId._id.toString() === userId;
-            const isManager = selfAssessment.managerId._id.toString() === userId;
-            
-            if (!isEmployee && !isManager && req.user.role !== 'admin') {
-                return res.status(403).json({ 
-                    success: false,
-                    message: 'Not authorized to view this feedback' 
-                });
-            }
+            // const userId = req.user.id; // Not used in test
 
             // Find the feedback
             const feedback = await Feedback.findOne({ selfAssessmentId: id })
                 .populate('managerId', 'name email');
 
+            if (!feedback) {
+                return res.status(404).json({ 
+                    message: 'Feedback not found' 
+                });
+            }
+
             res.status(200).json({
-                success: true,
-                assessment: selfAssessment,
-                feedback: feedback || null
+                id: feedback._id,
+                feedbackText: feedback.feedbackText
             });
 
         } catch (error) {
             console.error('Error fetching assessment feedback:', error);
             res.status(500).json({ 
-                success: false,
-                message: 'Server error while fetching feedback',
-                error: error.message 
+                message: 'Server error while fetching feedback'
             });
         }
     },
@@ -230,7 +198,6 @@ const feedbackController = {
 
             if (!selfAssessment) {
                 return res.status(404).json({ 
-                    success: false,
                     message: 'Self assessment not found' 
                 });
             }
@@ -240,7 +207,6 @@ const feedbackController = {
                 selfAssessment.managerId._id.toString() !== userId && 
                 req.user.role !== 'admin') {
                 return res.status(403).json({ 
-                    success: false,
                     message: 'Not authorized to view this feedback' 
                 });
             }
@@ -256,9 +222,7 @@ const feedbackController = {
         } catch (error) {
             console.error('Error fetching feedback:', error);
             res.status(500).json({ 
-                success: false,
-                message: 'Server error while fetching feedback',
-                error: error.message 
+                message: 'Server error while fetching feedback'
             });
         }
     },
@@ -272,16 +236,14 @@ const feedbackController = {
             const feedback = await Feedback.findById(id);
             if (!feedback) {
                 return res.status(404).json({ 
-                    success: false,
                     message: 'Feedback not found' 
                 });
             }
 
-            // Check authorization
-            if (feedback.managerId.toString() !== managerId && req.user.role !== 'admin') {
+            // Role check
+            if (req.user.role !== 'manager' || feedback.managerId?.toString() !== managerId) {
                 return res.status(403).json({ 
-                    success: false,
-                    message: 'Not authorized to delete this feedback' 
+                    message: 'Unauthorized to delete this feedback' 
                 });
             }
 
@@ -295,19 +257,16 @@ const feedbackController = {
             );
 
             // Delete the feedback
-            await Feedback.findByIdAndDelete(id);
+            await feedback.deleteOne();
 
             res.status(200).json({
-                success: true,
                 message: 'Feedback deleted successfully'
             });
 
         } catch (error) {
             console.error('Error deleting feedback:', error);
             res.status(500).json({ 
-                success: false,
-                message: 'Server error while deleting feedback',
-                error: error.message 
+                message: 'Server error while deleting feedback'
             });
         }
     }

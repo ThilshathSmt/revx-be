@@ -1,11 +1,19 @@
 const SelfAssessment = require('../models/SelfAssessment');
 const Task = require('../models/Task');
+const Feedback = require('../models/Feedback');
 
 const selfAssessmentController = {
     submitAssessment: async (req, res) => {
         try {
             const { taskId, comments } = req.body;
             const employeeId = req.user.id;
+
+            if (req.user.role !== 'employee') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Only employees can submit assessments'
+                });
+            }
 
             if (!taskId) {
                 return res.status(400).json({ 
@@ -119,6 +127,13 @@ const selfAssessmentController = {
         try {
             const managerId = req.user.id;
 
+            if (req.user.role !== 'manager') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Only managers can view assessments'
+                });
+            }
+
             const assessments = await SelfAssessment.find({ managerId })
                 .populate({
                     path: 'employeeId',
@@ -164,22 +179,23 @@ const selfAssessmentController = {
             const { id } = req.params;
             const userId = req.user.id;
 
-            const assessment = await SelfAssessment.findById(id)
-                .populate({
-                    path: 'employeeId',
-                    select: 'name email'
-                })
-                .populate({
-                    path: 'taskId',
-                    select: 'taskTitle dueDate status'
-                })
-                .populate({
-                    path: 'managerId',
-                    select: 'name email'
-                })
-                .populate({
-                    path: 'feedback'
-                });
+            let query = SelfAssessment.findById(id);
+            query = query.populate({
+                path: 'employeeId',
+                select: 'name email'
+            })
+            .populate({
+                path: 'taskId',
+                select: 'taskTitle dueDate status'
+            })
+            .populate({
+                path: 'managerId',
+                select: 'name email'
+            })
+            .populate({
+                path: 'feedback'
+            });
+            const assessment = await query;
 
             if (!assessment) {
                 return res.status(404).json({ 
@@ -188,8 +204,8 @@ const selfAssessmentController = {
                 });
             }
 
-            if (assessment.employeeId._id.toString() !== userId && 
-                assessment.managerId._id.toString() !== userId) {
+            if (assessment.employeeId._id && assessment.employeeId._id.toString() !== userId && 
+                assessment.managerId._id && assessment.managerId._id.toString() !== userId) {
                 return res.status(403).json({ 
                     success: false,
                     message: 'Not authorized to view this assessment' 
@@ -228,7 +244,7 @@ const selfAssessmentController = {
             if (assessment.employeeId.toString() !== employeeId) {
                 return res.status(403).json({ 
                     success: false,
-                    message: 'Not authorized to delete this assessment' 
+                    message: 'Unauthorized to delete this assessment' 
                 });
             }
 
@@ -237,11 +253,11 @@ const selfAssessmentController = {
                 await Feedback.findByIdAndDelete(assessment.feedback);
             }
 
-            await SelfAssessment.findByIdAndDelete(id);
+            await assessment.deleteOne();
 
             res.status(200).json({ 
                 success: true,
-                message: 'Assessment deleted successfully' 
+                message: 'Self-assessment deleted successfully' 
             });
 
         } catch (error) {
@@ -257,6 +273,13 @@ const selfAssessmentController = {
     getEmployeeAssessments: async (req, res) => {
         try {
             const employeeId = req.user.id;
+
+            if (req.user.role !== 'employee') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Only employees can view their own assessments'
+                });
+            }
 
             const completedTasks = await Task.find({
                 employeeId: employeeId,
