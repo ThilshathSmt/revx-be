@@ -37,7 +37,10 @@ const SelfAssessmentSchema = new mongoose.Schema({
     }
 });
 
-// Add text index for search functionality
+// Add indexes for better performance
 SelfAssessmentSchema.index({ comments: 'text' });
+SelfAssessmentSchema.index({ managerId: 1 });
+SelfAssessmentSchema.index({ employeeId: 1 });
+SelfAssessmentSchema.index({ taskId: 1 });
 
 module.exports = mongoose.model('SelfAssessment', SelfAssessmentSchema);

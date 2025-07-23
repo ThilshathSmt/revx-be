@@ -15,7 +15,7 @@ router.get('/manager', authenticate, feedbackController.getManagerFeedbacks);
 // View feedback for a specific self-assessment
 router.get('/assessment/:id', authenticate, feedbackController.getFeedbackByAssessmentId);
 
-// Get feedback by self-assessment ID (new endpoint)
+// Get feedback by self-assessment ID
 router.get('/self-assessment/:id', authenticate, feedbackController.getFeedbackBySelfAssessmentId);
 
 // Manager deletes their feedback

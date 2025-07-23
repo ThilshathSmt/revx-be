@@ -16,23 +16,17 @@ const feedbackController = {
                 });
             }
 
-            // Check if the self-assessment exists
-            const selfAssessment = await SelfAssessment.findById(selfAssessmentId)
-                .populate('employeeId', 'name email')
-                .populate('taskId', 'taskTitle');
+            // Check if the self-assessment exists and belongs to this manager
+            const selfAssessment = await SelfAssessment.findOne({
+                _id: selfAssessmentId,
+                managerId: managerId,
+                status: 'submitted'
+            }).populate('employeeId', 'name email');
 
             if (!selfAssessment) {
                 return res.status(404).json({ 
                     success: false,
-                    message: 'Self assessment not found' 
-                });
-            }
-
-            // Check if manager is authorized
-            if (selfAssessment.managerId.toString() !== managerId && req.user.role !== 'admin') {
-                return res.status(403).json({ 
-                    success: false,
-                    message: 'Not authorized to provide feedback for this assessment' 
+                    message: 'Self assessment not found or not available for feedback' 
                 });
             }
 
@@ -55,14 +49,17 @@ const feedbackController = {
 
             await newFeedback.save();
 
-            // Update the self-assessment with feedback reference
+            // Update the self-assessment
             selfAssessment.feedback = newFeedback._id;
+            selfAssessment.status = 'completed';
+            selfAssessment.updatedAt = Date.now();
             await selfAssessment.save();
 
             res.status(201).json({
                 success: true,
                 message: 'Feedback submitted successfully',
-                feedback: newFeedback
+                feedback: newFeedback,
+                assessment: selfAssessment
             });
 
         } catch (error) {
@@ -89,7 +86,6 @@ const feedbackController = {
                 });
             }
 
-            // Find the feedback
             const feedback = await Feedback.findById(id);
             if (!feedback) {
                 return res.status(404).json({ 
@@ -99,7 +95,7 @@ const feedbackController = {
             }
 
             // Check authorization
-            if (feedback.managerId.toString() !== managerId && req.user.role !== 'admin') {
+            if (feedback.managerId.toString() !== managerId) {
                 return res.status(403).json({ 
                     success: false,
                     message: 'Not authorized to edit this feedback' 
@@ -128,39 +124,40 @@ const feedbackController = {
         }
     },
 
-    // Get all feedbacks for manager
+    // Get all assessments needing feedback + given feedbacks (manager view)
     getManagerFeedbacks: async (req, res) => {
         try {
             const managerId = req.user.id;
 
-            // Get pending assessments (without feedback)
+            // Get submitted assessments awaiting feedback
             const pendingAssessments = await SelfAssessment.find({
-                managerId,
-                feedback: { $exists: false },
-                status: 'completed'
+                managerId: managerId,
+                status: 'submitted',
+                feedback: { $exists: false }
             })
             .populate('employeeId', 'name email')
-            .populate('taskId', 'taskTitle');
+            .populate('taskId', 'taskTitle dueDate')
+            .sort({ createdAt: -1 });
 
-            // Get given feedbacks
-            const givenFeedbacks = await Feedback.find({ managerId })
-                .populate({
-                    path: 'selfAssessmentId',
-                    populate: [
-                        { path: 'employeeId', select: 'name email' },
-                        { path: 'taskId', select: 'taskTitle' }
-                    ]
-                })
-                .sort({ createdAt: -1 });
+            // Get assessments with completed feedback
+            const completedAssessments = await SelfAssessment.find({
+                managerId: managerId,
+                status: 'completed',
+                feedback: { $exists: true }
+            })
+            .populate('employeeId', 'name email')
+            .populate('taskId', 'taskTitle dueDate')
+            .populate('feedback')
+            .sort({ updatedAt: -1 });
 
             res.status(200).json({
                 success: true,
                 pendingAssessments,
-                givenFeedbacks
+                completedAssessments: completedAssessments
             });
 
         } catch (error) {
-            console.error('Error fetching feedbacks:', error);
+            console.error('Error fetching manager feedbacks:', error);
             res.status(500).json({ 
                 success: false,
                 message: 'Server error while fetching feedbacks',
@@ -169,7 +166,7 @@ const feedbackController = {
         }
     },
 
-    // Get feedback for specific assessment
+    // Get feedback for a specific assessment
     getFeedbackByAssessmentId: async (req, res) => {
         try {
             const { id } = req.params;
@@ -179,7 +176,7 @@ const feedbackController = {
             const selfAssessment = await SelfAssessment.findById(id)
                 .populate('employeeId', 'name email')
                 .populate('managerId', 'name email')
-                .populate('taskId', 'taskTitle');
+                .populate('taskId', 'taskTitle dueDate');
 
             if (!selfAssessment) {
                 return res.status(404).json({ 
@@ -191,9 +188,8 @@ const feedbackController = {
             // Check authorization
             const isEmployee = selfAssessment.employeeId._id.toString() === userId;
             const isManager = selfAssessment.managerId._id.toString() === userId;
-            const isAdmin = req.user.role === 'admin';
             
-            if (!isEmployee && !isManager && !isAdmin) {
+            if (!isEmployee && !isManager && req.user.role !== 'admin') {
                 return res.status(403).json({ 
                     success: false,
                     message: 'Not authorized to view this feedback' 
@@ -206,12 +202,12 @@ const feedbackController = {
 
             res.status(200).json({
                 success: true,
-                feedback: feedback || null,
-                selfAssessment
+                assessment: selfAssessment,
+                feedback: feedback || null
             });
 
         } catch (error) {
-            console.error('Error fetching feedback:', error);
+            console.error('Error fetching assessment feedback:', error);
             res.status(500).json({ 
                 success: false,
                 message: 'Server error while fetching feedback',
@@ -220,14 +216,16 @@ const feedbackController = {
         }
     },
 
-    // Get feedback by self-assessment ID (new endpoint)
+    // Get feedback by self-assessment ID
     getFeedbackBySelfAssessmentId: async (req, res) => {
         try {
             const { id } = req.params;
             const userId = req.user.id;
 
-            // Find the self-assessment
-            const selfAssessment = await SelfAssessment.findById(id);
+            const selfAssessment = await SelfAssessment.findById(id)
+                .populate('employeeId', 'name email')
+                .populate('managerId', 'name email');
+
             if (!selfAssessment) {
                 return res.status(404).json({ 
                     success: false,
@@ -235,9 +233,9 @@ const feedbackController = {
                 });
             }
 
-            // Check authorization - only the employee or manager can view
-            if (selfAssessment.employeeId.toString() !== userId && 
-                selfAssessment.managerId.toString() !== userId && 
+            // Check authorization
+            if (selfAssessment.employeeId._id.toString() !== userId && 
+                selfAssessment.managerId._id.toString() !== userId && 
                 req.user.role !== 'admin') {
                 return res.status(403).json({ 
                     success: false,
@@ -245,7 +243,6 @@ const feedbackController = {
                 });
             }
 
-            // Find the feedback
             const feedback = await Feedback.findOne({ selfAssessmentId: id })
                 .populate('managerId', 'name email');
 
@@ -286,10 +283,13 @@ const feedbackController = {
                 });
             }
 
-            // Remove feedback reference from self-assessment
-            await SelfAssessment.updateOne(
-                { _id: feedback.selfAssessmentId },
-                { $unset: { feedback: "" } }
+            // Update the associated self-assessment
+            await SelfAssessment.findByIdAndUpdate(
+                feedback.selfAssessmentId,
+                { 
+                    $unset: { feedback: "" },
+                    $set: { status: 'submitted' }
+                }
             );
 
             // Delete the feedback
