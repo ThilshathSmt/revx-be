@@ -16,9 +16,9 @@ const selfAssessmentController = {
             }
 
             if (!taskId) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     success: false,
-                    message: 'Task ID is required' 
+                    message: 'Task ID is required'
                 });
             }
 
@@ -73,10 +73,10 @@ const selfAssessmentController = {
 
         } catch (error) {
             console.error('Error submitting self-assessment:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Server error', 
-                error: error.message 
+                message: 'Server error',
+                error: error.message
             });
         }
     },
@@ -90,16 +90,16 @@ const selfAssessmentController = {
             const assessment = await SelfAssessment.findById(id);
 
             if (!assessment) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: 'Assessment not found' 
+                    message: 'Assessment not found'
                 });
             }
 
             if (assessment.employeeId.toString() !== employeeId) {
-                return res.status(403).json({ 
+                return res.status(403).json({
                     success: false,
-                    message: 'Not authorized to edit this assessment' 
+                    message: 'Not authorized to edit this assessment'
                 });
             }
 
@@ -115,10 +115,10 @@ const selfAssessmentController = {
 
         } catch (error) {
             console.error('Error editing self-assessment:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Server error', 
-                error: error.message 
+                message: 'Server error',
+                error: error.message
             });
         }
     },
@@ -148,8 +148,8 @@ const selfAssessmentController = {
             // Enrich with feedback information
             const enrichedAssessments = await Promise.all(
                 assessments.map(async (assessment) => {
-                    const feedback = await Feedback.findOne({ 
-                        selfAssessmentId: assessment._id 
+                    const feedback = await Feedback.findOne({
+                        selfAssessmentId: assessment._id
                     });
                     return {
                         ...assessment.toObject(),
@@ -166,10 +166,10 @@ const selfAssessmentController = {
 
         } catch (error) {
             console.error('Error getting manager assessments:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Server error', 
-                error: error.message 
+                message: 'Server error',
+                error: error.message
             });
         }
     },
@@ -184,31 +184,31 @@ const selfAssessmentController = {
                 path: 'employeeId',
                 select: 'name email'
             })
-            .populate({
-                path: 'taskId',
-                select: 'taskTitle dueDate status'
-            })
-            .populate({
-                path: 'managerId',
-                select: 'name email'
-            })
-            .populate({
-                path: 'feedback'
-            });
+                .populate({
+                    path: 'taskId',
+                    select: 'taskTitle dueDate status'
+                })
+                .populate({
+                    path: 'managerId',
+                    select: 'name email'
+                })
+                .populate({
+                    path: 'feedback'
+                });
             const assessment = await query;
 
             if (!assessment) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: 'Assessment not found' 
+                    message: 'Assessment not found'
                 });
             }
 
-            if (assessment.employeeId._id && assessment.employeeId._id.toString() !== userId && 
+            if (assessment.employeeId._id && assessment.employeeId._id.toString() !== userId &&
                 assessment.managerId._id && assessment.managerId._id.toString() !== userId) {
-                return res.status(403).json({ 
+                return res.status(403).json({
                     success: false,
-                    message: 'Not authorized to view this assessment' 
+                    message: 'Not authorized to view this assessment'
                 });
             }
 
@@ -219,10 +219,10 @@ const selfAssessmentController = {
 
         } catch (error) {
             console.error('Error getting assessment by ID:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Server error', 
-                error: error.message 
+                message: 'Server error',
+                error: error.message
             });
         }
     },
@@ -235,16 +235,16 @@ const selfAssessmentController = {
             const assessment = await SelfAssessment.findById(id);
 
             if (!assessment) {
-                return res.status(404).json({ 
+                return res.status(404).json({
                     success: false,
-                    message: 'Assessment not found' 
+                    message: 'Assessment not found'
                 });
             }
 
             if (assessment.employeeId.toString() !== employeeId) {
-                return res.status(403).json({ 
+                return res.status(403).json({
                     success: false,
-                    message: 'Unauthorized to delete this assessment' 
+                    message: 'Unauthorized to delete this assessment'
                 });
             }
 
@@ -255,17 +255,17 @@ const selfAssessmentController = {
 
             await assessment.deleteOne();
 
-            res.status(200).json({ 
+            res.status(200).json({
                 success: true,
-                message: 'Self-assessment deleted successfully' 
+                message: 'Self-assessment deleted successfully'
             });
 
         } catch (error) {
             console.error('Error deleting assessment:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Server error', 
-                error: error.message 
+                message: 'Server error',
+                error: error.message
             });
         }
     },
@@ -284,12 +284,17 @@ const selfAssessmentController = {
             const completedTasks = await Task.find({
                 employeeId: employeeId,
                 status: 'completed'
-            }).select('_id taskTitle dueDate');
+            }).select('_id taskTitle dueDate projectId') // Add projectId here
+                .populate({
+                    path: 'projectId',
+                    select: 'projectTitle'
+                });
 
             const submittedAssessments = await SelfAssessment.find({ employeeId })
                 .populate({
                     path: 'taskId',
-                    select: 'taskTitle dueDate'
+                    select: 'taskTitle dueDate projectId',
+                    populate: { path: 'projectId', select: 'projectTitle' }
                 })
                 .populate({
                     path: 'feedback'
@@ -309,10 +314,10 @@ const selfAssessmentController = {
 
         } catch (error) {
             console.error('Error getting employee assessments:', error);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
-                message: 'Server error', 
-                error: error.message 
+                message: 'Server error',
+                error: error.message
             });
         }
     }
