@@ -139,21 +139,23 @@ const feedbackController = {
             .populate('taskId', 'taskTitle dueDate')
             .sort({ createdAt: -1 });
 
-            // Get assessments with completed feedback
-            const completedAssessments = await SelfAssessment.find({
-                managerId: managerId,
-                status: 'completed',
-                feedback: { $exists: true }
+            // Get feedbacks given by this manager, with populated self-assessment
+            const givenFeedbacks = await Feedback.find({
+                managerId: managerId
             })
-            .populate('employeeId', 'name email')
-            .populate('taskId', 'taskTitle dueDate')
-            .populate('feedback')
+            .populate({
+                path: 'selfAssessmentId',
+                populate: [
+                    { path: 'employeeId', select: 'name email' },
+                    { path: 'taskId', select: 'taskTitle dueDate' }
+                ]
+            })
             .sort({ updatedAt: -1 });
 
             res.status(200).json({
                 success: true,
                 pendingAssessments,
-                completedAssessments: completedAssessments
+                givenFeedbacks
             });
 
         } catch (error) {
