@@ -9,38 +9,57 @@ const SYSTEM_SENDER_ID = process.env.SYSTEM_SENDER_ID || '67a30304b58fe979f1fb4f
 // 1. Notify Manager on GoalReview creation
 exports.notifyManagerOnGoalReviewCreated = async (goalReview) => {
   try {
+    // Check if the goalReview object has a valid managerId
+    if (!goalReview.managerId) {
+      console.warn('No manager assigned to this GoalReview. Notification not sent.');
+      return;
+    }
+
+    // Send notification only to the assigned manager
     await Notification.create({
-      recipientId: goalReview.managerId,
+      recipientId: goalReview.managerId, // Only this manager gets notified
       senderId: goalReview.hrAdminId,
       title: 'New Goal Review Assigned',
       message: `You have been assigned a goal review: "${goalReview.description}". Due: ${goalReview.dueDate?.toDateString() || 'No due date'}`,
       type: 'GoalReviewCreated',
-      link: `/GoalReview/${goalReview._id}`,
+      link: `/goalReview/${goalReview._id}`, // Adjusted for front-end routing (optional)
       relatedEntityId: goalReview._id,
       entityType: 'GoalReview'
     });
+
+    console.log(`Notification sent to Manager (ID: ${goalReview.managerId}) for GoalReview ${goalReview._id}`);
   } catch (err) {
     console.error('Notification Error (notifyManagerOnGoalReviewCreated):', err.message, err);
   }
 };
 
+
 // 2. Notify Employee on TaskReview creation
 exports.notifyEmployeeOnTaskReviewCreated = async (taskReview) => {
   try {
+    // Ensure employeeId is present
+    if (!taskReview.employeeId) {
+      console.warn('No employee assigned to this TaskReview. Notification not sent.');
+      return;
+    }
+
     await Notification.create({
-      recipientId: taskReview.employeeId,
+      recipientId: taskReview.employeeId, // Only the assigned employee gets this
       senderId: taskReview.hrAdminId,
       title: 'New Task Review Assigned',
-      message: `You have been assigned a task under goal "${taskReview.goalId}". Due: ${taskReview.dueDate?.toDateString() || 'No due date'}`,
+      message: `You have been assigned a new task review related to goal "${taskReview.goalId}". Due: ${taskReview.dueDate?.toDateString() || 'No due date'}`,
       type: 'TaskReviewCreated',
-      link: `/TaskReview/${taskReview._id}`,
+      link: `/taskReview/${taskReview._id}`, // Front-end path (adjust if needed)
       relatedEntityId: taskReview._id,
       entityType: 'TaskReview'
     });
+
+    console.log(`Notification sent to Employee (ID: ${taskReview.employeeId}) for TaskReview ${taskReview._id}`);
   } catch (err) {
     console.error('Notification Error (notifyEmployeeOnTaskReviewCreated):', err.message, err);
   }
 };
+
 
 // 3. Notify HR on GoalReview submission
 exports.notifyHROnGoalReviewSubmitted = async (goalReview) => {
