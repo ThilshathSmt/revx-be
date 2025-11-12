@@ -29,31 +29,39 @@ This backend handles:
 
 ---
 
-## 🧬 System Architecture
-
-```mermaid
 flowchart TD
     subgraph Client["Frontend (Next.js)"]
         A1["User Actions"]
         A2["API Calls"]
         A1 --> A2
     end
-
+    
     subgraph Server["Backend (Express.js)"]
-        A2 --> B1["Routes Layer"]
-        B1 --> B2["Controllers"]
-        B2 --> B3["Services & Middleware"]
-        B3 --> B4["MongoDB Connection"]
+        B1["Routes Layer"]
+        B2["Controllers"]
+        B3["Services & Middleware"]
+        B4["MongoDB Connection"]
+        B1 --> B2
+        B2 --> B3
+        B3 --> B4
     end
-
+    
     subgraph Database["MongoDB"]
-        B4 --> C1["revx_be_1"]
+        C1["revx_be_1"]
     end
-
+    
     subgraph Notifications["Notification System"]
-        B3 --> D1["Email & Cron Jobs"]
+        D1["Email & Cron Jobs"]
     end
-
+    
+    A2 --> B1
+    B4 --> C1
+    B3 --> D1
+    
+    style Client fill:#e1f5ff
+    style Server fill:#fff4e1
+    style Database fill:#e8f5e9
+    style Notifications fill:#fce4ec
 
 
 =====================================================================================================================
