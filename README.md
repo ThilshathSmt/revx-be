@@ -46,13 +46,14 @@ flowchart TD
         B3 --> B4["MongoDB Connection"]
     end
 
-    subgraph DB["Database"]
-        B4 --> C1["revx_be_1 (MongoDB)"]
+    subgraph Database["MongoDB"]
+        B4 --> C1["revx_be_1"]
     end
 
     subgraph Notifications["Notification System"]
-        B3 --> D1["Email / Cron Jobs"]
+        B3 --> D1["Email & Cron Jobs"]
     end
+
 
 
 =====================================================================================================================
