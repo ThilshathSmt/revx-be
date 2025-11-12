@@ -43,16 +43,17 @@ flowchart TD
         A2 --> B1["Routes Layer"]
         B1 --> B2["Controllers"]
         B2 --> B3["Services & Middleware"]
-        B3 --> B4["MongoDB Database"]
+        B3 --> B4["MongoDB Connection"]
     end
 
     subgraph DB["Database"]
-        B4 --> C1["revx_be_1"]
+        B4 --> C1["revx_be_1 (MongoDB)"]
     end
 
     subgraph Notifications["Notification System"]
         B3 --> D1["Email / Cron Jobs"]
     end
+
 
 =====================================================================================================================
 | Feature         | Endpoint             | Method     | Description               |
