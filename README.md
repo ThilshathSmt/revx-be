@@ -29,39 +29,14 @@ This backend handles:
 
 ---
 
-flowchart TD
-    subgraph Client["Frontend (Next.js)"]
-        A1["User Actions"]
-        A2["API Calls"]
-        A1 --> A2
-    end
-    
-    subgraph Server["Backend (Express.js)"]
-        B1["Routes Layer"]
-        B2["Controllers"]
-        B3["Services & Middleware"]
-        B4["MongoDB Connection"]
-        B1 --> B2
-        B2 --> B3
-        B3 --> B4
-    end
-    
-    subgraph Database["MongoDB"]
-        C1["revx_be_1"]
-    end
-    
-    subgraph Notifications["Notification System"]
-        D1["Email & Cron Jobs"]
-    end
-    
-    A2 --> B1
-    B4 --> C1
-    B3 --> D1
-    
-    style Client fill:#e1f5ff
-    style Server fill:#fff4e1
-    style Database fill:#e8f5e9
-    style Notifications fill:#fce4ec
+## 🧬 System Architecture
+
+The following diagram illustrates the overall architecture of the **RevX Backend System**:
+
+<p align="center">
+  <img src="./assets/images/architecture.jpeg" alt="RevX Architecture Diagram" width="700"/>
+</p>
+
 
 
 =====================================================================================================================
@@ -115,18 +90,10 @@ npm run dev
 
 =====================================================================================================================
 
-revx-be/
-│
-├── config/           # MongoDB config
-├── controllers/      # Business logic
-├── middleware/       # JWT & auth middleware
-├── models/           # Mongoose schemas
-├── routes/           # API routes
-├── utils/            # Utilities and helpers
-├── Services/         # Email and cron services
-├── uploads/          # File uploads
-├── app.js
-└── server.js
+<p align="center">
+  <img src="./assets\images\Backend_folderStructure.png" alt="RevX Backend Project folder Structure" width="700"/>
+</p>
+
 =====================================================================================================================
 
 📊 Deployment
