@@ -39,7 +39,7 @@ The following diagram illustrates the overall architecture of the **RevX Backend
 
 
 
-=====================================================================================================================
+=======================================================================
 | Feature         | Endpoint             | Method     | Description               |
 | --------------- | -------------------- | ---------- | ------------------------- |
 | Authentication  | `/api/auth/login`    | POST       | User login (JWT)          |
@@ -52,25 +52,82 @@ The following diagram illustrates the overall architecture of the **RevX Backend
 | Notifications   | `/api/notifications` | GET        | Send alerts and reminders |
 | Reports         | `/api/reports`       | GET        | Analytics and summaries   |
 
-=====================================================================================================================
+==========================================================================
 
-# Clone the repository
+# 🚀 Quick Start Guide
+
+## Backend Setup
+
+```bash
+# Clone and setup
 git clone https://github.com/ThilshathSmt/revx-be.git
 cd revx-be
-
-# Install dependencies
 npm install
 
-# Configure environment variables
+# Configure .env
 touch .env
-# Add:
-# MONGO_URI=mongodb://localhost:27017/revx_be_1
-# JWT_SECRET=your-secret
-# PORT=5001
+```
 
-# Start development server
+Add to `.env`:
+```env
+MONGO_URI=mongodb://localhost:27017/revx_be_1
+JWT_SECRET=your-secret
+PORT=5001
+```
+
+```bash
+# Start server
 npm run dev
-=====================================================================================================================
+```
+
+---
+
+## Frontend Setup
+
+```bash
+# Clone and setup
+git clone https://github.com/ThilshathSmt/revx-fe.git
+cd revx-fe
+npm install
+
+# Configure .env
+touch .env
+```
+
+Add to `.env`:
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
+```
+
+```bash
+# Start app
+npm run dev
+```
+
+---
+
+## 📋 Quick Reference
+
+| Service  | URL                      | Port |
+|----------|--------------------------|------|
+| Frontend | http://localhost:3000    | 3000 |
+| Backend  | http://localhost:5001    | 5001 |
+| MongoDB  | mongodb://localhost:27017| 27017|
+
+---
+
+## ✅ Verify Installation
+
+```bash
+# Check backend
+curl http://localhost:5001/api/health
+
+# Check frontend
+# Open browser: http://localhost:3000
+```
+==========================================================================
 
 | Member           | Role                 | Contribution                                      |
 | ---------------- | -------------------- | ------------------------------------------------- |
@@ -80,7 +137,7 @@ npm run dev
 | **Fadhil MFM**   | Full Stack Developer | Feedback & Self-assessment APIs                   |
 | **Haneef MNAR**  | Full Stack Developer | Reporting & Analytics APIs                        |
 
-=====================================================================================================================
+=========================================================================
 
 | Command       | Description               |
 | ------------- | ------------------------- |
@@ -88,13 +145,13 @@ npm run dev
 | `npm start`   | Start in production mode  |
 | `npm test`    | Run backend tests         |
 
-=====================================================================================================================
+=============================================================================
 
 <p align="center">
   <img src="./assets\images\Backend_folderStructure.png" alt="RevX Backend Project folder Structure" width="700"/>
 </p>
 
-=====================================================================================================================
+==========================================================================
 
 📊 Deployment
 
